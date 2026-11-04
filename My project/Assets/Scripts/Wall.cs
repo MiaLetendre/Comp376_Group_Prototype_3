@@ -12,15 +12,21 @@ public class Wall : MonoBehaviour
     [SerializeField] float knockback = 1.25f;
     [SerializeField] float damageCooldown = 0.75f;
     [SerializeField] Color wallColor = new Color(0.45f, 0.28f, 0.18f, 1f);
+    [SerializeField] Color clashColor = new Color(1f, 0.85f, 0.35f, 1f);
+    [SerializeField] float clashPunchScale = 1.18f;
+    [SerializeField] float clashPunchDuration = 0.12f;
 
     private Sewing sewing;
     private float lastHitTime = -999f;
     private SpriteRenderer spriteRenderer;
+    private Vector3 baseScale;
+    private float punchTimer;
 
     public void Initialize(Sewing sewingRef, Vector2 size)
     {
         sewing = sewingRef;
-        transform.localScale = new Vector3(size.x, size.y, 1f);
+        baseScale = new Vector3(size.x, size.y, 1f);
+        transform.localScale = baseScale;
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer == null)
@@ -42,6 +48,8 @@ public class Wall : MonoBehaviour
 
     private void Update()
     {
+        UpdateClashPunch();
+
         if (sewing == null || !sewing.IsNeedleAlive()) return;
 
         Transform needle = sewing.GetNeedleTransform();
@@ -68,6 +76,41 @@ public class Wall : MonoBehaviour
         }
 
         sewing.DamageNeedle(damage, away * knockback);
+        PlayClash(needlePos);
+    }
+
+    private void PlayClash(Vector2 hitPos)
+    {
+        ClashEffect.Play(hitPos, clashColor);
+        punchTimer = clashPunchDuration;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = Color.Lerp(wallColor, clashColor, 0.65f);
+        }
+    }
+
+    private void UpdateClashPunch()
+    {
+        if (punchTimer <= 0f) return;
+
+        punchTimer -= Time.deltaTime;
+        float t = 1f - Mathf.Clamp01(punchTimer / clashPunchDuration);
+        float punch = Mathf.Sin((1f - t) * Mathf.PI);
+        transform.localScale = baseScale * Mathf.Lerp(1f, clashPunchScale, punch);
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = Color.Lerp(clashColor, wallColor, t);
+        }
+
+        if (punchTimer <= 0f)
+        {
+            transform.localScale = baseScale;
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = wallColor;
+            }
+        }
     }
 
     private static Sprite CreateUnitSprite()

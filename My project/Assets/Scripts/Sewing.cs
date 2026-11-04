@@ -37,7 +37,6 @@ public class Sewing : MonoBehaviour
 
     private bool touchingString = false;
 
-    //the sewing mechanic is jsut a lijked set of nodes, slowly influincing the one behind it
     private struct Node
     {
         public Vector2 position;
@@ -99,8 +98,6 @@ public class Sewing : MonoBehaviour
         public int health = 3;
     }
    
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         nodesArray = new Node[tailNodes];
@@ -143,13 +140,8 @@ public class Sewing : MonoBehaviour
         lineRenderer.startWidth = tailSegmentWidth;
         lineRenderer.endWidth = tailSegmentWidth;
         targetAngel = Mathf.Atan2(lastNeedleDir.y, lastNeedleDir.x) * Mathf.Rad2Deg;
-
-
-
-
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (needleSprite == null || needleSprite.health <= 0)
@@ -182,7 +174,6 @@ public class Sewing : MonoBehaviour
                 targetAngel = Mathf.Atan2(lastNeedleDir.y, lastNeedleDir.x) * Mathf.Rad2Deg;
             }
             
-            //record last frame mous position, then track new one and make needle rotate to face the direction of movement
 
             lastMouseWorldPos = mouseWorld;
             needleSprite.needleTransform.position = worldMousePos;
@@ -190,7 +181,6 @@ public class Sewing : MonoBehaviour
             {
                 sewingPoint.position = worldMousePos;
             }
-            //rotate the needle sprite to face the direction of movement
 
             Vector2 needleDir = nodesArray[0].position - nodesArray[1].position;
             if (needleDir.magnitude > 0.0001f)
@@ -222,7 +212,6 @@ public class Sewing : MonoBehaviour
                     )
                 };
 
-                //OVERLAPPING LOGIC
                 if (!touchingString && i > 8 && i < tailNodes - 1)
                 {
                     Vector2 a = nodesArray[0].position;
@@ -394,7 +383,7 @@ public class Sewing : MonoBehaviour
         }
     }
 
-    public void DespawnButtonsLeftOf(float worldX)
+    public void DespawnButtonsBelow(float worldY)
     {
         if (buttons == null || buttons.Count == 0) return;
 
@@ -408,7 +397,7 @@ public class Sewing : MonoBehaviour
                 continue;
             }
 
-            if (button.transform.position.x < worldX)
+            if (button.transform.position.y < worldY)
             {
                 buttons.Remove(button);
                 Destroy(button);
