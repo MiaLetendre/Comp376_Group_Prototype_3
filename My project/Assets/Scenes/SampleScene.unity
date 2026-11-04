@@ -437,6 +437,7 @@ GameObject:
   - component: {fileID: 1209400392}
   - component: {fileID: 1209400391}
   - component: {fileID: 1209400390}
+  - component: {fileID: 1209400394}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -484,6 +485,19 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 0
+--- !u!114 &1209400394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1209400389}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c8e2a91b6d74f0e9a15c3d7e8f0246b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HealthDisplay
+  heartSprite: {fileID: 4430440766625350887, guid: 7a7ff317253aad140a29e265e810f195, type: 3}
 --- !u!223 &1209400392
 Canvas:
   m_ObjectHideFlags: 0

@@ -32,8 +32,8 @@ public class DodgeButton : MonoBehaviour
         Vector2 velocity;
         if (distance < detectionRadius && distance > 0.001f)
         {
-            // Sprint away from the needle tip.
             velocity = (pos - needlePos).normalized * fleeSpeed;
+            velocity.y *= 0.35f;
         }
         else
         {
@@ -42,23 +42,20 @@ public class DodgeButton : MonoBehaviour
                 PickNewWanderDirection();
             }
             velocity = wanderDirection * wanderSpeed;
+            velocity.y *= 0.35f;
         }
 
         pos += velocity * Time.deltaTime;
-        pos = ClampToScreen(pos);
+        pos.x = ClampX(pos.x);
 
         transform.position = new Vector3(pos.x, pos.y, transform.position.z);
     }
 
-    private Vector2 ClampToScreen(Vector2 pos)
+    private float ClampX(float x)
     {
-        float halfHeight = cam.orthographicSize - edgePadding;
-        float halfWidth = halfHeight * cam.aspect - edgePadding;
-        Vector3 camPos = cam.transform.position;
-
-        pos.x = Mathf.Clamp(pos.x, camPos.x - halfWidth, camPos.x + halfWidth);
-        pos.y = Mathf.Clamp(pos.y, camPos.y - halfHeight, camPos.y + halfHeight);
-        return pos;
+        float halfWidth = cam.orthographicSize * cam.aspect - edgePadding;
+        float camX = cam.transform.position.x;
+        return Mathf.Clamp(x, camX - halfWidth, camX + halfWidth);
     }
 
     private void PickNewWanderDirection()

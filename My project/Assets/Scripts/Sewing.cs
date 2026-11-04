@@ -49,6 +49,30 @@ public class Sewing : MonoBehaviour
 
     public int ButtonsCollected => buttonsCollected;
 
+    public int AliveButtonCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (GameObject button in buttons.Keys)
+            {
+                if (button != null) count++;
+            }
+            return count;
+        }
+    }
+
+    public int AliveButtonCountOf(ButtonType type)
+    {
+        int count = 0;
+        foreach (KeyValuePair<GameObject, ButtonData> entry in buttons)
+        {
+            if (entry.Key == null || entry.Value == null) continue;
+            if (entry.Value.buttonType == type) count++;
+        }
+        return count;
+    }
+
     public enum ButtonType
     {
         Regular,
@@ -347,6 +371,7 @@ public class Sewing : MonoBehaviour
                 if (sr != null)
                 {
                     sr.color = buttonData.buttonColor;
+                    sr.sortingOrder = 6;
                 }
                 
             }
