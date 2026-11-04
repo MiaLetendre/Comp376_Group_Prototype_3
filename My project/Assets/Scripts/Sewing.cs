@@ -27,13 +27,10 @@ public class Sewing : MonoBehaviour
 
     [Header("Button Spawning")]
     [SerializeField] GameObject buttonPrefab;
+    [SerializeField] GameObject redButtonPrefab;
     [SerializeField] Transform buttonParent;
     [SerializeField] Dictionary<GameObject, ButtonData> buttons = new Dictionary<GameObject, ButtonData>();
     [SerializeField] float buttonDistanceThreshold = 2f;
-
-    [Header("Combat")]
-    [SerializeField] float attackerContactRadius = 1.1f;
-    [SerializeField] float attackerDamageCooldown = 0.9f;
 
     private bool touchingString = false;
 
@@ -49,7 +46,6 @@ public class Sewing : MonoBehaviour
     private float targetAngel;
     private NeedleData needleSprite;
     private int buttonsCollected;
-    private float attackerLastHitTime = -999f;
 
     public int ButtonsCollected => buttonsCollected;
 
@@ -120,6 +116,7 @@ public class Sewing : MonoBehaviour
         SpawnButton(initialButtonPos, ButtonType.Regular);
         SpawnButton(initialButtonPos + new Vector2(4f, 0f), ButtonType.Sheild);
         SpawnButton(initialButtonPos + new Vector2(2f, 2.5f), ButtonType.Dodger);
+        SpawnButton(initialButtonPos + new Vector2(-3f, 2f), ButtonType.Attacker);
 
 
         lastMouseWorldPos = initialPosition;
@@ -230,8 +227,6 @@ public class Sewing : MonoBehaviour
                 linePositions[i] = new Vector3(nodesArray[i].position.x, nodesArray[i].position.y, 0);
             }
             lineRenderer.SetPositions(linePositions);
-
-            ProcessAttackerContact(worldMousePos);
         }
     }
 
@@ -327,30 +322,17 @@ public class Sewing : MonoBehaviour
         }
     }
 
-    void ProcessAttackerContact(Vector2 needlePos)
-    {
-        if (Time.time - attackerLastHitTime < attackerDamageCooldown) return;
-
-        foreach (KeyValuePair<GameObject, ButtonData> pair in buttons)
-        {
-            if (pair.Key == null || pair.Value == null) continue;
-            if (pair.Value.buttonType != ButtonType.Attacker) continue;
-
-            float dist = Vector2.Distance(needlePos, pair.Key.transform.position);
-            if (dist <= attackerContactRadius)
-            {
-                attackerLastHitTime = Time.time;
-                DamageNeedle(1, (needlePos - (Vector2)pair.Key.transform.position).normalized);
-                break;
-            }
-        }
-    }
-
     public void SpawnButton(Vector2 position, ButtonType buttonType)
     {
-        if (buttonPrefab != null && buttonParent != null)
+        GameObject prefab = buttonPrefab;
+        if (buttonType == ButtonType.Attacker && redButtonPrefab != null)
         {
-            GameObject newButton = Instantiate(buttonPrefab, position, Quaternion.identity, buttonParent);
+            prefab = redButtonPrefab;
+        }
+
+        if (prefab != null && buttonParent != null)
+        {
+            GameObject newButton = Instantiate(prefab, position, Quaternion.identity, buttonParent);
             newButton.SetActive(true);
             ButtonData buttonData = new ButtonData(buttonType);
 
@@ -367,6 +349,16 @@ public class Sewing : MonoBehaviour
                     sr.color = buttonData.buttonColor;
                 }
                 
+            }
+
+            if (buttonType == ButtonType.Attacker)
+            {
+                RedButton red = newButton.GetComponent<RedButton>();
+                if (red == null)
+                {
+                    red = newButton.AddComponent<RedButton>();
+                }
+                red.Initialize(this);
             }
 
             if (buttonType == ButtonType.Dodger && needleSprite != null && needleSprite.needleTransform != null)
@@ -408,6 +400,23 @@ public class Sewing : MonoBehaviour
     public Transform GetNeedleTransform()
     {
         return needleSprite != null ? needleSprite.needleTransform : null;
+    }
+
+    public Vector2 GetNeedleHeadPosition()
+    {
+        if (needleSprite == null || needleSprite.needleTransform == null)
+        {
+            return Vector2.zero;
+        }
+
+        Transform needle = needleSprite.needleTransform;
+        if (needle is RectTransform rect)
+        {
+            Vector3 localHead = new Vector3(rect.rect.xMax, rect.rect.center.y, 0f);
+            return needle.TransformPoint(localHead);
+        }
+
+        return needle.position;
     }
 
     public int GetNeedleHealth()

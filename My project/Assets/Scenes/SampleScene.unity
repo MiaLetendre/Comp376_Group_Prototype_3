@@ -607,6 +607,7 @@ MonoBehaviour:
   rotationSpeed: 15
   needleSpriteOriginal: {fileID: 704769705}
   buttonPrefab: {fileID: 1180991521}
+  redButtonPrefab: {fileID: 8123456789012345601, guid: e7c1a4b92d6f4e0a8c3b5d1f7a9e2c40, type: 3}
   buttonParent: {fileID: 1209400393}
   buttonDistanceThreshold: 2
 --- !u!120 &1734386638
