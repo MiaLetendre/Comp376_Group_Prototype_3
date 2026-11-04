@@ -1,13 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UI;
-using Unity.GraphToolkit.Editor;
-using System;
-using Unity.VisualScripting;
 using UnityEngine.InputSystem;
-using System.Linq;
-
-
 
 public class Sewing : MonoBehaviour
 {
@@ -23,16 +17,26 @@ public class Sewing : MonoBehaviour
     [SerializeField] float rotationSpeed = 15f;
     [SerializeField] Transform needleSpriteOriginal;
 
+    [Header("Growth (harder control over time)")]
+    [SerializeField] int maxTailNodes = 90;
+    [SerializeField] int nodesGainedPerButton = 3;
+    [SerializeField] float widthGainPerButton = 0.003f;
+    [SerializeField] float lengthGainPerButton = 0.008f;
+    [SerializeField] float maxTailSegmentWidth = 0.06f;
+    [SerializeField] float maxTailSegmentLength = 0.45f;
+
     [Header("Button Spawning")]
     [SerializeField] GameObject buttonPrefab;
     [SerializeField] Transform buttonParent;
     [SerializeField] Dictionary<GameObject, ButtonData> buttons = new Dictionary<GameObject, ButtonData>();
     [SerializeField] float buttonDistanceThreshold = 2f;
 
+    [Header("Combat")]
+    [SerializeField] float attackerContactRadius = 1.1f;
+    [SerializeField] float attackerDamageCooldown = 0.9f;
+
     private bool touchingString = false;
 
-
-    //the sewing mechanic is jsut a lijked set of nodes, slowly influincing the one behind it
     private struct Node
     {
         public Vector2 position;
@@ -44,6 +48,10 @@ public class Sewing : MonoBehaviour
     private Vector2 lastNeedleDir;
     private float targetAngel;
     private NeedleData needleSprite;
+    private int buttonsCollected;
+    private float attackerLastHitTime = -999f;
+
+    public int ButtonsCollected => buttonsCollected;
 
     public enum ButtonType
     {
@@ -90,8 +98,6 @@ public class Sewing : MonoBehaviour
         public int health = 3;
     }
    
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         nodesArray = new Node[tailNodes];
@@ -113,6 +119,7 @@ public class Sewing : MonoBehaviour
         Vector2 initialButtonPos = Vector2.zero;
         SpawnButton(initialButtonPos, ButtonType.Regular);
         SpawnButton(initialButtonPos + new Vector2(4f, 0f), ButtonType.Sheild);
+        SpawnButton(initialButtonPos + new Vector2(2f, 2.5f), ButtonType.Dodger);
 
 
         lastMouseWorldPos = initialPosition;
@@ -133,15 +140,15 @@ public class Sewing : MonoBehaviour
         lineRenderer.startWidth = tailSegmentWidth;
         lineRenderer.endWidth = tailSegmentWidth;
         targetAngel = Mathf.Atan2(lastNeedleDir.y, lastNeedleDir.x) * Mathf.Rad2Deg;
-
-
-
-
     }
 
-    // Update is called once per frame
     void Update()
     {
+        if (needleSprite == null || needleSprite.health <= 0)
+        {
+            return;
+        }
+
         Vector3 mouseScreen = Vector3.zero;
         float zDist = 0f;
         if (Mouse.current != null)
@@ -168,13 +175,12 @@ public class Sewing : MonoBehaviour
             }
             
 
-            
-            //record last frame mous position, then track new one and make needle rotate to face the direction of movement
-
             lastMouseWorldPos = mouseWorld;
             needleSprite.needleTransform.position = worldMousePos;
-            sewingPoint.position = worldMousePos;
-            //rotate the needle sprite to face the direction of movement
+            if (sewingPoint != null)
+            {
+                sewingPoint.position = worldMousePos;
+            }
 
             Vector2 needleDir = nodesArray[0].position - nodesArray[1].position;
             if (needleDir.magnitude > 0.0001f)
@@ -206,7 +212,6 @@ public class Sewing : MonoBehaviour
                     )
                 };
 
-                //OVERLAPPING LOGIC
                 if (!touchingString && i > 8 && i < tailNodes - 1)
                 {
                     Vector2 a = nodesArray[0].position;
@@ -214,7 +219,6 @@ public class Sewing : MonoBehaviour
                     Vector2 c = nodesArray[i - 1].position;
                     Vector2 d = nodesArray[i].position;
                     touchingString = CheckIntersection(a, c, d) != CheckIntersection(b, c, d) && CheckIntersection(a, b ,c ) != CheckIntersection (a , b ,d);
-                    Debug.Log("Touching string: " + touchingString);
                     if (touchingString)
                     {
                         KillButton(touchingString);
@@ -226,6 +230,8 @@ public class Sewing : MonoBehaviour
                 linePositions[i] = new Vector3(nodesArray[i].position.x, nodesArray[i].position.y, 0);
             }
             lineRenderer.SetPositions(linePositions);
+
+            ProcessAttackerContact(worldMousePos);
         }
     }
 
@@ -249,8 +255,6 @@ public class Sewing : MonoBehaviour
             if (button != null)
             {
                 Vector3 buttonWorldPos = button.transform.position;
-    
-                Vector2 needlePosition = needleSprite.needleTransform.position; 
             
                 float distance = Vector2.Distance(needleSprite.needleTransform.position, buttonWorldPos);
 
@@ -264,9 +268,9 @@ public class Sewing : MonoBehaviour
                         if (buttonData.currentWraps >= buttonData.wrapsRequired)
                         {
                             buttons.Remove(button);
-                           Destroy(button);
+                            Destroy(button);
+                            OnButtonCollected(buttonData.buttonType);
                         }
-                        //button.gameObject.SetActive(false);
                         break;
                     }
                     
@@ -283,6 +287,64 @@ public class Sewing : MonoBehaviour
        
     }
 
+    void OnButtonCollected(ButtonType type)
+    {
+        buttonsCollected++;
+        GrowTail();
+    }
+
+    void GrowTail()
+    {
+        int newCount = Mathf.Min(maxTailNodes, tailNodes + nodesGainedPerButton);
+        if (newCount > tailNodes)
+        {
+            Node[] grown = new Node[newCount];
+            for (int i = 0; i < tailNodes; i++)
+            {
+                grown[i] = nodesArray[i];
+            }
+
+            Vector2 tip = nodesArray[tailNodes - 1].position;
+            for (int i = tailNodes; i < newCount; i++)
+            {
+                grown[i].position = tip;
+            }
+
+            nodesArray = grown;
+            tailNodes = newCount;
+            if (lineRenderer != null)
+            {
+                lineRenderer.positionCount = tailNodes;
+            }
+        }
+
+        tailSegmentWidth = Mathf.Min(maxTailSegmentWidth, tailSegmentWidth + widthGainPerButton);
+        tailSegmentLength = Mathf.Min(maxTailSegmentLength, tailSegmentLength + lengthGainPerButton);
+        if (lineRenderer != null)
+        {
+            lineRenderer.startWidth = tailSegmentWidth;
+            lineRenderer.endWidth = tailSegmentWidth;
+        }
+    }
+
+    void ProcessAttackerContact(Vector2 needlePos)
+    {
+        if (Time.time - attackerLastHitTime < attackerDamageCooldown) return;
+
+        foreach (KeyValuePair<GameObject, ButtonData> pair in buttons)
+        {
+            if (pair.Key == null || pair.Value == null) continue;
+            if (pair.Value.buttonType != ButtonType.Attacker) continue;
+
+            float dist = Vector2.Distance(needlePos, pair.Key.transform.position);
+            if (dist <= attackerContactRadius)
+            {
+                attackerLastHitTime = Time.time;
+                DamageNeedle(1, (needlePos - (Vector2)pair.Key.transform.position).normalized);
+                break;
+            }
+        }
+    }
 
     public void SpawnButton(Vector2 position, ButtonType buttonType)
     {
@@ -306,11 +368,82 @@ public class Sewing : MonoBehaviour
                 }
                 
             }
-            buttons.Add(newButton, new ButtonData(buttonType));
+
+            if (buttonType == ButtonType.Dodger && needleSprite != null && needleSprite.needleTransform != null)
+            {
+                DodgeButton dodge = newButton.GetComponent<DodgeButton>();
+                if (dodge == null)
+                {
+                    dodge = newButton.AddComponent<DodgeButton>();
+                }
+                dodge.Initialize(needleSprite.needleTransform);
+            }
+
+            buttons.Add(newButton, buttonData);
+        }
+    }
+
+    public void DespawnButtonsBelow(float worldY)
+    {
+        if (buttons == null || buttons.Count == 0) return;
+
+        List<GameObject> buttonKeys = new List<GameObject>(buttons.Keys);
+        for (int i = 0; i < buttonKeys.Count; i++)
+        {
+            GameObject button = buttonKeys[i];
+            if (button == null)
+            {
+                buttons.Remove(button);
+                continue;
+            }
+
+            if (button.transform.position.y < worldY)
+            {
+                buttons.Remove(button);
+                Destroy(button);
+            }
+        }
+    }
+
+    public Transform GetNeedleTransform()
+    {
+        return needleSprite != null ? needleSprite.needleTransform : null;
+    }
+
+    public int GetNeedleHealth()
+    {
+        return needleSprite != null ? needleSprite.health : 0;
+    }
+
+    public bool IsNeedleAlive()
+    {
+        return needleSprite != null && needleSprite.health > 0;
+    }
+
+    public void DamageNeedle(int amount, Vector2 knockback)
+    {
+        if (needleSprite == null || needleSprite.health <= 0) return;
+
+        needleSprite.health = Mathf.Max(0, needleSprite.health - amount);
+
+        if (needleSprite.needleTransform != null && knockback.sqrMagnitude > 0.0001f)
+        {
+            needleSprite.needleTransform.position += (Vector3)knockback;
+            if (sewingPoint != null)
+            {
+                sewingPoint.position = needleSprite.needleTransform.position;
+            }
+            if (nodesArray != null && nodesArray.Length > 0)
+            {
+                nodesArray[0].position = needleSprite.needleTransform.position;
+            }
+        }
+
+        if (needleSprite.health <= 0)
+        {
+            Debug.Log("Needle broke! Buttons collected: " + buttonsCollected);
         }
     }
 
     
 }
-
-

@@ -181,8 +181,9 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         GUI.Label(new Rect(188, 88, 590, 55), "HOW TO SEW", headingStyle);
         GUI.Label(new Rect(192, 153, 425, 32), "1   Move your mouse to steer the needle", bodyStyle);
         GUI.Label(new Rect(192, 205, 425, 58), "2   Circle a button with the thread,\n     crossing the loop to collect it", bodyStyle);
-        GUI.Label(new Rect(192, 287, 425, 34), "3   Black button: one wrap", bodyStyle);
-        GUI.Label(new Rect(192, 327, 425, 34), "4   Blue shield: two wraps", bodyStyle);
+        GUI.Label(new Rect(192, 275, 425, 28), "3   Black: one wrap   Blue shield: two wraps", bodyStyle);
+        GUI.Label(new Rect(192, 305, 425, 28), "4   Green dodges you   Red damages the needle", bodyStyle);
+        GUI.Label(new Rect(192, 335, 425, 28), "5   Avoid brown walls while the level scrolls", bodyStyle);
 
         DrawLoopDemo();
         GUI.Label(new Rect(581, 366, 205, 30), "Loop around the button", smallStyle);
