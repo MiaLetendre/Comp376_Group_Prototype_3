@@ -618,8 +618,15 @@ MonoBehaviour:
   tailSegmentLength: 0.3
   tailSegmentWidth: 0.05
   spriteRotaionOffset: 0
-  rotationSpeed: 15
+  directionSmoothingSamples: 20
+  minimumDirectionMovementPixels: 2
   needleSpriteOriginal: {fileID: 704769705}
+  maxTailNodes: 90
+  nodesGainedPerButton: 3
+  widthGainPerButton: 0.003
+  lengthGainPerButton: 0.008
+  maxTailSegmentWidth: 0.06
+  maxTailSegmentLength: 0.45
   buttonParent: {fileID: 1209400393}
   buttonTypes:
   - prefab: {fileID: 7479389638260734148, guid: c65ff33fa921ad24c9d0004135845c33, type: 3}
