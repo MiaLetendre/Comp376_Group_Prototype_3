@@ -13,7 +13,9 @@ public class Sewing : MonoBehaviour
     [SerializeField] float tailSegmentLength = .2f;
     [SerializeField] float tailSegmentWidth = .01f;
     [SerializeField] float spriteRotaionOffset = 0f;
-    [SerializeField] float rotationSpeed = 15f;
+    [SerializeField, Min(1), Tooltip("Number of recent movement directions averaged to smooth the needle. Updates while playing.")]
+    int directionSmoothingSamples = 10;
+    [SerializeField, Min(0f)] float minimumDirectionMovementPixels = 2f;
     [SerializeField] Transform needleSpriteOriginal;
 
     [Header("Growth (harder control over time)")]
@@ -38,21 +40,21 @@ public class Sewing : MonoBehaviour
         public Vector2 initialPosition;
     }
 
-    private bool touchingString = false;
-    private bool wasTouchingString = false;
-
     private struct Node
     {
         public Vector2 position;
     }
 
     private Node[] nodesArray;
-    private bool isSewing = false;
+    private Vector2[] directionHistory;
+    private Vector2 lastDirectionSampleScreenPosition;
+    private Vector2 lastNeedleDirection = Vector2.right;
+    private int directionHistoryIndex;
+    private int directionHistoryCount;
     private Vector2 lastMouseWorldPos;
-    private Vector2 lastNeedleDir;
-    private float targetAngel;
     private NeedleData needleSprite;
     private int buttonsCollected;
+    private bool previousCursorVisibility;
     private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
 
     public int ButtonsCollected => buttonsCollected;
@@ -86,10 +88,14 @@ public class Sewing : MonoBehaviour
         public Transform needleTransform;
         public int health = 3;
     }
-   
+
     void Start()
     {
+        previousCursorVisibility = Cursor.visible;
+        Cursor.visible = false;
+
         nodesArray = new Node[tailNodes];
+        directionHistory = new Vector2[Mathf.Max(1, directionSmoothingSamples)];
         Vector2 initialPosition = Vector2.zero;
 
         needleSprite = new NeedleData();
@@ -98,11 +104,11 @@ public class Sewing : MonoBehaviour
         if (Mouse.current != null)
         {
             Vector3 mouseScreen = Mouse.current.position.ReadValue();
+            lastDirectionSampleScreenPosition = mouseScreen;
             float zDistance = Mathf.Abs(Camera.main.transform.position.z);
             mouseScreen.z = zDistance;
             Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(new Vector3(mouseScreen.x, mouseScreen.y, zDistance));
             initialPosition = new Vector2(mouseWorld.x, mouseWorld.y);
-            lastNeedleDir = Vector2.right;
         }
 
         lastMouseWorldPos = initialPosition;
@@ -113,16 +119,16 @@ public class Sewing : MonoBehaviour
         if (lineRenderer == null)
         {
             lineRenderer = gameObject.GetComponent<LineRenderer>();
-        
+
             if (lineRenderer == null)
             {
-            lineRenderer = gameObject.AddComponent<LineRenderer>();
+                lineRenderer = gameObject.AddComponent<LineRenderer>();
             }
         }
         lineRenderer.positionCount = tailNodes;
         lineRenderer.startWidth = tailSegmentWidth;
         lineRenderer.endWidth = tailSegmentWidth;
-        targetAngel = Mathf.Atan2(lastNeedleDir.y, lastNeedleDir.x) * Mathf.Rad2Deg;
+        needleSprite.needleTransform.rotation = Quaternion.Euler(0, 0, spriteRotaionOffset);
 
         foreach (ButtonSpawnOption option in buttonTypes)
         {
@@ -137,92 +143,190 @@ public class Sewing : MonoBehaviour
     {
         if (needleSprite == null || needleSprite.health <= 0)
         {
+            if (needleSprite != null) Cursor.visible = true;
             return;
         }
 
-        if (Mouse.current != null)
+        if (Mouse.current == null || Camera.main == null) return;
+        EnsureDirectionHistorySize();
+
+        Vector3 mouseScreen = Mouse.current.position.ReadValue();
+        float zDistance = Mathf.Abs(Camera.main.transform.position.z);
+        Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(
+            new Vector3(mouseScreen.x, mouseScreen.y, zDistance));
+        Vector2 worldMousePos = new Vector2(mouseWorld.x, mouseWorld.y);
+        Vector2 previousMouseWorldPos = lastMouseWorldPos;
+
+        Vector2 screenPosition = mouseScreen;
+        Vector2 directionDelta = screenPosition - lastDirectionSampleScreenPosition;
+        if (directionDelta.magnitude >= minimumDirectionMovementPixels)
         {
-            isSewing = true;
+            UpdateNeedleDirection(directionDelta.normalized);
+            lastDirectionSampleScreenPosition = screenPosition;
         }
-        
 
-        if (isSewing && Mouse.current != null)
+        float movementAngle = Mathf.Atan2(lastNeedleDirection.y, lastNeedleDirection.x) * Mathf.Rad2Deg;
+        needleSprite.needleTransform.rotation = Quaternion.Euler(
+            0f,
+            0f,
+            movementAngle + spriteRotaionOffset);
+        PositionNeedleHeadAt(worldMousePos);
+
+        nodesArray[0] = new Node { position = GetNeedleTailPosition() };
+        for (int i = 1; i < tailNodes; i++)
         {
-            Vector3 mouseScreen = Mouse.current.position.ReadValue();
-            float zDistance = Mathf.Abs(Camera.main.transform.position.z);
-            Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(new Vector3(mouseScreen.x, mouseScreen.y, zDistance));
-            Vector2 worldMousePos = new Vector2(mouseWorld.x, mouseWorld.y);
-
-            Vector2 previousMouseWorldPos = lastMouseWorldPos;
-            Vector2 movementDelta = worldMousePos - lastMouseWorldPos;
-            if (movementDelta.magnitude >.00005f)
+            float nodeAngle = Mathf.Atan2(
+                nodesArray[i - 1].position.y - nodesArray[i].position.y,
+                nodesArray[i - 1].position.x - nodesArray[i].position.x);
+            nodesArray[i] = new Node
             {
-                lastNeedleDir = movementDelta.normalized;
-                targetAngel = Mathf.Atan2(lastNeedleDir.y, lastNeedleDir.x) * Mathf.Rad2Deg;
-            }
-            
-
-            needleSprite.needleTransform.position = worldMousePos;
-            if (sewingPoint != null)
-            {
-                sewingPoint.position = worldMousePos;
-            }
-
-            Vector2 needleDir = nodesArray[0].position - nodesArray[1].position;
-            if (needleDir.magnitude > 0.0001f)
-            {
-                targetAngel = Mathf.Atan2(needleDir.y, needleDir.x) * Mathf.Rad2Deg;
-                Quaternion rotation = Quaternion.Euler(0, 0, targetAngel + spriteRotaionOffset); 
-                needleSprite.needleTransform.rotation = Quaternion.Lerp(needleSprite.needleTransform.rotation, rotation, Time.deltaTime * rotationSpeed);
-            }
-            
-
-            nodesArray[0] = new Node
-            {
-                position = worldMousePos
+                position = new Vector2(
+                    nodesArray[i - 1].position.x - Mathf.Cos(nodeAngle) * tailSegmentLength,
+                    nodesArray[i - 1].position.y - Mathf.Sin(nodeAngle) * tailSegmentLength)
             };
+        }
 
-            Vector3[] linePositions = new Vector3[tailNodes];
-            linePositions[0] = new Vector3(worldMousePos.x, worldMousePos.y, 0);
-            touchingString = false;
+        Vector3[] linePositions = new Vector3[tailNodes];
+        for (int i = 0; i < tailNodes; i++)
+        {
+            linePositions[i] = new Vector3(nodesArray[i].position.x, nodesArray[i].position.y, 0);
+        }
+        lineRenderer.SetPositions(linePositions);
 
-            for (int i = 1; i < tailNodes; i++)
-            {
-                float nodeAngle = Mathf.Atan2(nodesArray[i - 1].position.y - nodesArray[i].position.y, nodesArray[i - 1].position.x - nodesArray[i].position.x);
-                linePositions[i] = new Vector3(nodesArray[i].position.x, nodesArray[i].position.y, 0);
-                nodesArray[i] = new Node
-                {
-                    position = new Vector2(
-                        nodesArray[i - 1].position.x - Mathf.Cos(nodeAngle) * tailSegmentLength, 
-                        nodesArray[i - 1].position.y - Mathf.Sin(nodeAngle) * tailSegmentLength
-                    )
-                };
+        bool threadCrossingStarted = TryFindNeedleThreadCrossing(
+            previousMouseWorldPos,
+            worldMousePos,
+            out _);
+        ProcessButtonCollection(
+            previousMouseWorldPos,
+            worldMousePos,
+            threadCrossingStarted);
+        lastMouseWorldPos = worldMousePos;
+    }
 
-                if (!touchingString && i > 8 && i < tailNodes - 1)
-                {
-                    Vector2 a = nodesArray[0].position;
-                    Vector2 b = nodesArray[1].position;
-                    Vector2 c = nodesArray[i - 1].position;
-                    Vector2 d = nodesArray[i].position;
-                    touchingString = CheckIntersection(a, c, d) != CheckIntersection(b, c, d) && CheckIntersection(a, b ,c ) != CheckIntersection (a , b ,d);
-                    
-                }
-                
-                
-                linePositions[i] = new Vector3(nodesArray[i].position.x, nodesArray[i].position.y, 0);
-            }
-            lineRenderer.SetPositions(linePositions);
-            ProcessButtonCollection(
-                previousMouseWorldPos,
-                worldMousePos,
-                touchingString && !wasTouchingString);
-            wasTouchingString = touchingString;
-            lastMouseWorldPos = worldMousePos;
+    private void OnDisable()
+    {
+        Cursor.visible = previousCursorVisibility;
+    }
+
+    private void PositionNeedleHeadAt(Vector2 worldPosition)
+    {
+        Transform needle = needleSprite.needleTransform;
+        Vector3 headOffset = Vector3.zero;
+        if (needle is RectTransform rect)
+        {
+            Vector3 localHead = new Vector3(rect.rect.xMax, rect.rect.center.y, 0f);
+            headOffset = needle.TransformPoint(localHead) - needle.position;
+        }
+
+        needle.position = (Vector3)worldPosition - headOffset;
+        if (sewingPoint != null && sewingPoint != needle)
+        {
+            sewingPoint.position = worldPosition;
         }
     }
 
-    bool CheckIntersection(Vector2 a, Vector2 b, Vector2 c){
-        return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
+    private void UpdateNeedleDirection(Vector2 movementDirection)
+    {
+        directionHistory[directionHistoryIndex] = movementDirection;
+        directionHistoryIndex = (directionHistoryIndex + 1) % directionHistory.Length;
+        directionHistoryCount = Mathf.Min(directionHistoryCount + 1, directionHistory.Length);
+
+        Vector2 averageDirection = Vector2.zero;
+        for (int i = 0; i < directionHistoryCount; i++)
+        {
+            averageDirection += directionHistory[i];
+        }
+
+        if (averageDirection.sqrMagnitude <= 0.000001f)
+        {
+            return;
+        }
+
+        lastNeedleDirection = averageDirection.normalized;
+    }
+
+    private void EnsureDirectionHistorySize()
+    {
+        int requestedSize = Mathf.Max(1, directionSmoothingSamples);
+        if (directionHistory.Length == requestedSize)
+        {
+            return;
+        }
+
+        int retainedCount = Mathf.Min(directionHistoryCount, requestedSize);
+        Vector2[] resizedHistory = new Vector2[requestedSize];
+        int oldestIndex = (directionHistoryIndex - retainedCount + directionHistory.Length) % directionHistory.Length;
+        for (int i = 0; i < retainedCount; i++)
+        {
+            resizedHistory[i] = directionHistory[(oldestIndex + i) % directionHistory.Length];
+        }
+
+        directionHistory = resizedHistory;
+        directionHistoryCount = retainedCount;
+        directionHistoryIndex = retainedCount % requestedSize;
+    }
+
+    private bool TryFindNeedleThreadCrossing(
+        Vector2 previousHeadPosition,
+        Vector2 currentHeadPosition,
+        out Vector2 crossingPosition)
+    {
+        crossingPosition = Vector2.zero;
+        if ((currentHeadPosition - previousHeadPosition).sqrMagnitude <= 0.00000001f)
+        {
+            return false;
+        }
+
+        for (int i = 9; i < tailNodes; i++)
+        {
+            Vector2 threadStart = nodesArray[i - 1].position;
+            Vector2 threadEnd = nodesArray[i].position;
+            if (TryGetSegmentIntersection(
+                    previousHeadPosition,
+                    currentHeadPosition,
+                    threadStart,
+                    threadEnd,
+                    out crossingPosition))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryGetSegmentIntersection(
+        Vector2 a,
+        Vector2 b,
+        Vector2 c,
+        Vector2 d,
+        out Vector2 intersection)
+    {
+        intersection = Vector2.zero;
+        Vector2 firstDirection = b - a;
+        Vector2 secondDirection = d - c;
+        float denominator = Cross(firstDirection, secondDirection);
+        if (Mathf.Abs(denominator) < 0.000001f)
+        {
+            return false;
+        }
+
+        Vector2 offset = c - a;
+        float firstAmount = Cross(offset, secondDirection) / denominator;
+        float secondAmount = Cross(offset, firstDirection) / denominator;
+        if (firstAmount < 0f || firstAmount > 1f || secondAmount < 0f || secondAmount > 1f)
+        {
+            return false;
+        }
+
+        intersection = a + firstDirection * firstAmount;
+        return true;
+    }
+
+    private static float Cross(Vector2 first, Vector2 second)
+    {
+        return first.x * second.y - first.y * second.x;
     }
 
     private void ProcessButtonCollection(
@@ -236,7 +340,9 @@ public class Sewing : MonoBehaviour
         for (int i = 0; i < buttonKeys.Count; i++)
         {
             GameObject button = buttonKeys[i];
-            if (button == null || !buttons.TryGetValue(button, out ButtonCollector collector) || collector == null)
+            if (button == null ||
+                !buttons.TryGetValue(button, out ButtonCollector collector) ||
+                collector == null)
             {
                 buttons.Remove(button);
                 continue;
@@ -307,6 +413,7 @@ public class Sewing : MonoBehaviour
         foreach (ButtonSpawnOption option in buttonTypes)
         {
             if (option == null || option.prefab == null || option.targetShare <= 0f) continue;
+
             ButtonCollector collector = option.prefab.GetComponent<ButtonCollector>();
             if (collector == null || string.IsNullOrWhiteSpace(collector.ButtonTypeId))
             {
@@ -418,6 +525,23 @@ public class Sewing : MonoBehaviour
         return needle.position;
     }
 
+    private Vector2 GetNeedleTailPosition()
+    {
+        if (needleSprite == null || needleSprite.needleTransform == null)
+        {
+            return Vector2.zero;
+        }
+
+        Transform needle = needleSprite.needleTransform;
+        if (needle is RectTransform rect)
+        {
+            Vector3 localTail = new Vector3(rect.rect.xMin, rect.rect.center.y, 0f);
+            return needle.TransformPoint(localTail);
+        }
+
+        return needle.position;
+    }
+
     public int GetNeedleHealth()
     {
         return needleSprite != null ? needleSprite.health : 0;
@@ -439,11 +563,11 @@ public class Sewing : MonoBehaviour
             needleSprite.needleTransform.position += (Vector3)knockback;
             if (sewingPoint != null)
             {
-                sewingPoint.position = needleSprite.needleTransform.position;
+                sewingPoint.position = GetNeedleHeadPosition();
             }
             if (nodesArray != null && nodesArray.Length > 0)
             {
-                nodesArray[0].position = needleSprite.needleTransform.position;
+                nodesArray[0].position = GetNeedleTailPosition();
             }
         }
 
@@ -453,5 +577,5 @@ public class Sewing : MonoBehaviour
         }
     }
 
-    
+
 }
