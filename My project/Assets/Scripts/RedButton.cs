@@ -5,7 +5,7 @@ using UnityEngine;
 /// tip overlapping the button body damages the player the same way a wall does.
 /// </summary>
 [DisallowMultipleComponent]
-public class RedButton : MonoBehaviour
+public class RedButton : MonoBehaviour, IButtonSpawnInitializer
 {
     [SerializeField] int damage = 1;
     [SerializeField] float knockback = 1.25f;
@@ -21,7 +21,7 @@ public class RedButton : MonoBehaviour
     private Vector3 baseScale;
     private float punchTimer;
 
-    public void Initialize(Sewing sewingRef)
+    public void Initialize(Sewing sewingRef, Transform needle)
     {
         sewing = sewingRef;
         CacheVisuals();
