@@ -12,7 +12,6 @@ public class LevelAutoscroll : MonoBehaviour
     [Header("Spawning")]
     [SerializeField] float spawnAheadDistance = 12f;
     [SerializeField] float despawnBehindDistance = 12f;
-    [SerializeField] bool spawnWalls;
     [SerializeField] float minButtonGap = 1.05f;
     [SerializeField] float minWallGap = 1.15f;
     [SerializeField] int easyAliveButtons = 6;
@@ -81,10 +80,7 @@ public class LevelAutoscroll : MonoBehaviour
         aliveTime += Time.deltaTime;
         cam.transform.position += new Vector3(0f, ScrollSpeed() * Time.deltaTime, 0f);
 
-        if (spawnWalls)
-        {
-            TrySpawnWall();
-        }
+        TrySpawnWall();
         TrySpawnButton();
         CleanupBehindCamera();
     }
@@ -152,12 +148,7 @@ public class LevelAutoscroll : MonoBehaviour
     {
         if (room <= 0) return false;
 
-        float horizon = ViewTop() + spawnAheadDistance;
-        if (spawnWalls)
-        {
-            horizon = Mathf.Min(horizon, nextWallBottomY - 1.2f);
-        }
-
+        float horizon = Mathf.Min(ViewTop() + spawnAheadDistance, nextWallBottomY - 1.2f);
         if (nextButtonSpawnY > horizon) return false;
 
         GetOpenLane(difficulty, out float openLeft, out float openRight);
