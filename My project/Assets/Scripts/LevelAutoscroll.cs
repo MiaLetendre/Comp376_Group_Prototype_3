@@ -180,7 +180,7 @@ public class LevelAutoscroll : MonoBehaviour
     private void SpawnButtonAt(float offsetX, float y)
     {
         Vector2 spawnPos = new Vector2(cam.transform.position.x + offsetX, y);
-        sewing.SpawnButton(spawnPos, PickButtonType());
+        sewing.SpawnRandomButton(spawnPos);
         spawnedButtonPositions.Add(spawnPos);
     }
 
@@ -405,37 +405,6 @@ public class LevelAutoscroll : MonoBehaviour
                 spawnedWalls.RemoveAt(i);
             }
         }
-    }
-
-    private Sewing.ButtonType PickButtonType()
-    {
-        Sewing.ButtonType[] types =
-        {
-            Sewing.ButtonType.Regular,
-            Sewing.ButtonType.Sheild,
-            Sewing.ButtonType.Dodger,
-            Sewing.ButtonType.Attacker
-        };
-        float[] desired = { 0.40f, 0.22f, 0.18f, 0.20f };
-
-        int alive = Mathf.Max(1, sewing.AliveButtonCount);
-        float total = 0f;
-        float[] weights = new float[types.Length];
-        for (int i = 0; i < types.Length; i++)
-        {
-            float share = sewing.AliveButtonCountOf(types[i]) / (float)alive;
-            weights[i] = desired[i] / (0.35f + share);
-            total += weights[i];
-        }
-
-        float roll = Random.value * total;
-        for (int i = 0; i < types.Length; i++)
-        {
-            roll -= weights[i];
-            if (roll <= 0f) return types[i];
-        }
-
-        return Sewing.ButtonType.Regular;
     }
 
     public float CurrentScrollSpeed => ScrollSpeed();

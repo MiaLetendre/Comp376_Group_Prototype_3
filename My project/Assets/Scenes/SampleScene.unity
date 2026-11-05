@@ -620,9 +620,28 @@ MonoBehaviour:
   spriteRotaionOffset: 0
   rotationSpeed: 15
   needleSpriteOriginal: {fileID: 704769705}
-  buttonPrefab: {fileID: 1180991521}
-  redButtonPrefab: {fileID: 8123456789012345601, guid: e7c1a4b92d6f4e0a8c3b5d1f7a9e2c40, type: 3}
   buttonParent: {fileID: 1209400393}
+  buttonTypes:
+  - prefab: {fileID: 7479389638260734148, guid: c65ff33fa921ad24c9d0004135845c33, type: 3}
+    targetShare: 0.4
+    spawnAtStart: 1
+    initialPosition: {x: 0, y: 0}
+  - prefab: {fileID: 7479389638260734148, guid: 16000000000000000000000000000001, type: 3}
+    targetShare: 0.22
+    spawnAtStart: 1
+    initialPosition: {x: 4, y: 0}
+  - prefab: {fileID: 7479389638260734148, guid: 16000000000000000000000000000002, type: 3}
+    targetShare: 0.18
+    spawnAtStart: 1
+    initialPosition: {x: 2, y: 2.5}
+  - prefab: {fileID: 8123456789012345601, guid: e7c1a4b92d6f4e0a8c3b5d1f7a9e2c40, type: 3}
+    targetShare: 0.2
+    spawnAtStart: 1
+    initialPosition: {x: -3, y: 2}
+  - prefab: {fileID: 7479389638260734148, guid: 16000000000000000000000000000003, type: 3}
+    targetShare: 0
+    spawnAtStart: 0
+    initialPosition: {x: 0, y: 0}
   buttonDistanceThreshold: 2
 --- !u!120 &1734386638
 LineRenderer:

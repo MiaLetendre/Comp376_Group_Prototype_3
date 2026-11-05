@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
 public class Sewing : MonoBehaviour
@@ -26,13 +25,21 @@ public class Sewing : MonoBehaviour
     [SerializeField] float maxTailSegmentLength = 0.45f;
 
     [Header("Button Spawning")]
-    [SerializeField] GameObject buttonPrefab;
-    [SerializeField] GameObject redButtonPrefab;
     [SerializeField] Transform buttonParent;
-    [SerializeField] Dictionary<GameObject, ButtonData> buttons = new Dictionary<GameObject, ButtonData>();
+    [SerializeField] List<ButtonSpawnOption> buttonTypes = new List<ButtonSpawnOption>();
     [SerializeField] float buttonDistanceThreshold = 2f;
 
+    [System.Serializable]
+    public class ButtonSpawnOption
+    {
+        public GameObject prefab;
+        [Min(0f)] public float targetShare = 0.25f;
+        public bool spawnAtStart;
+        public Vector2 initialPosition;
+    }
+
     private bool touchingString = false;
+    private bool wasTouchingString = false;
 
     private struct Node
     {
@@ -46,6 +53,7 @@ public class Sewing : MonoBehaviour
     private float targetAngel;
     private NeedleData needleSprite;
     private int buttonsCollected;
+    private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
 
     public int ButtonsCollected => buttonsCollected;
 
@@ -62,54 +70,15 @@ public class Sewing : MonoBehaviour
         }
     }
 
-    public int AliveButtonCountOf(ButtonType type)
+    public int AliveButtonCountOf(string typeId)
     {
         int count = 0;
-        foreach (KeyValuePair<GameObject, ButtonData> entry in buttons)
+        foreach (KeyValuePair<GameObject, ButtonCollector> entry in buttons)
         {
             if (entry.Key == null || entry.Value == null) continue;
-            if (entry.Value.buttonType == type) count++;
+            if (entry.Value.ButtonTypeId == typeId) count++;
         }
         return count;
-    }
-
-    public enum ButtonType
-    {
-        Regular,
-        Sheild,
-        Attacker,
-        Dodger
-    }
-
-    public class ButtonData
-    {
-        public ButtonType buttonType;
-        public int wrapsRequired;
-        public int currentWraps = 0;
-        public Color buttonColor;
-        public float lastWrapTime =  -999f;
-
-        public ButtonData(ButtonType type)
-        {
-            buttonType = type;
-            wrapsRequired = (buttonType == ButtonType.Sheild) ? 2 : 1;
-            if (buttonType == ButtonType.Regular)
-            {
-                buttonColor = Color.black;
-            }
-            else if (buttonType == ButtonType.Sheild)
-            {
-                buttonColor = Color.blue;
-            }
-            else if (buttonType == ButtonType.Attacker)
-            {
-                buttonColor = Color.red;
-            }
-            else if (buttonType == ButtonType.Dodger)
-            {
-                buttonColor = Color.green;
-            }
-        }
     }
 
     public class NeedleData
@@ -136,13 +105,6 @@ public class Sewing : MonoBehaviour
             lastNeedleDir = Vector2.right;
         }
 
-        Vector2 initialButtonPos = Vector2.zero;
-        SpawnButton(initialButtonPos, ButtonType.Regular);
-        SpawnButton(initialButtonPos + new Vector2(4f, 0f), ButtonType.Sheild);
-        SpawnButton(initialButtonPos + new Vector2(2f, 2.5f), ButtonType.Dodger);
-        SpawnButton(initialButtonPos + new Vector2(-3f, 2f), ButtonType.Attacker);
-
-
         lastMouseWorldPos = initialPosition;
         for (int i = 0; i < tailNodes; i++)
         {
@@ -161,6 +123,14 @@ public class Sewing : MonoBehaviour
         lineRenderer.startWidth = tailSegmentWidth;
         lineRenderer.endWidth = tailSegmentWidth;
         targetAngel = Mathf.Atan2(lastNeedleDir.y, lastNeedleDir.x) * Mathf.Rad2Deg;
+
+        foreach (ButtonSpawnOption option in buttonTypes)
+        {
+            if (option != null && option.spawnAtStart)
+            {
+                SpawnButton(option.initialPosition, option);
+            }
+        }
     }
 
     void Update()
@@ -170,24 +140,20 @@ public class Sewing : MonoBehaviour
             return;
         }
 
-        Vector3 mouseScreen = Vector3.zero;
-        float zDist = 0f;
         if (Mouse.current != null)
         {
             isSewing = true;
-            mouseScreen = Mouse.current.position.ReadValue();
-            zDist = -Camera.main.transform.position.z;
-            lastMouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(mouseScreen.x, mouseScreen.y, zDist));
         }
         
 
         if (isSewing && Mouse.current != null)
         {
-            mouseScreen = Mouse.current.position.ReadValue();
+            Vector3 mouseScreen = Mouse.current.position.ReadValue();
             float zDistance = Mathf.Abs(Camera.main.transform.position.z);
             Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(new Vector3(mouseScreen.x, mouseScreen.y, zDistance));
             Vector2 worldMousePos = new Vector2(mouseWorld.x, mouseWorld.y);
 
+            Vector2 previousMouseWorldPos = lastMouseWorldPos;
             Vector2 movementDelta = worldMousePos - lastMouseWorldPos;
             if (movementDelta.magnitude >.00005f)
             {
@@ -196,7 +162,6 @@ public class Sewing : MonoBehaviour
             }
             
 
-            lastMouseWorldPos = mouseWorld;
             needleSprite.needleTransform.position = worldMousePos;
             if (sewingPoint != null)
             {
@@ -240,10 +205,6 @@ public class Sewing : MonoBehaviour
                     Vector2 c = nodesArray[i - 1].position;
                     Vector2 d = nodesArray[i].position;
                     touchingString = CheckIntersection(a, c, d) != CheckIntersection(b, c, d) && CheckIntersection(a, b ,c ) != CheckIntersection (a , b ,d);
-                    if (touchingString)
-                    {
-                        KillButton(touchingString);
-                    }
                     
                 }
                 
@@ -251,6 +212,12 @@ public class Sewing : MonoBehaviour
                 linePositions[i] = new Vector3(nodesArray[i].position.x, nodesArray[i].position.y, 0);
             }
             lineRenderer.SetPositions(linePositions);
+            ProcessButtonCollection(
+                previousMouseWorldPos,
+                worldMousePos,
+                touchingString && !wasTouchingString);
+            wasTouchingString = touchingString;
+            lastMouseWorldPos = worldMousePos;
         }
     }
 
@@ -258,55 +225,40 @@ public class Sewing : MonoBehaviour
         return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
     }
 
-    void KillButton(bool touchingString)
+    private void ProcessButtonCollection(
+        Vector2 previousNeedlePosition,
+        Vector2 currentNeedlePosition,
+        bool threadCrossingStarted)
     {
-        if (buttons == null || buttons.Count == 0)
-        {
-            return;
-        }
-    
+        if (buttons.Count == 0) return;
+
         List<GameObject> buttonKeys = new List<GameObject>(buttons.Keys);
-        for (int i = buttonKeys.Count - 1; i >= 0; i--)
+        for (int i = 0; i < buttonKeys.Count; i++)
         {
             GameObject button = buttonKeys[i];
-            ButtonData buttonData = buttons[button];
-            if (buttonData == null) continue;
-            if (button != null)
+            if (button == null || !buttons.TryGetValue(button, out ButtonCollector collector) || collector == null)
             {
-                Vector3 buttonWorldPos = button.transform.position;
-            
-                float distance = Vector2.Distance(needleSprite.needleTransform.position, buttonWorldPos);
-
-
-                if (distance < buttonDistanceThreshold)
-                {
-                    if (Time.time - buttonData.lastWrapTime > 1f)
-                    {
-                        buttonData.lastWrapTime = Time.time;
-                        buttonData.currentWraps++;
-                        if (buttonData.currentWraps >= buttonData.wrapsRequired)
-                        {
-                            buttons.Remove(button);
-                            Destroy(button);
-                            OnButtonCollected(buttonData.buttonType);
-                        }
-                        break;
-                    }
-                    
-                }
-            }
-            else
-            {
-                //saftey incase null buttons in buttons
                 buttons.Remove(button);
-
+                continue;
             }
+
+            if (!collector.TryCollect(
+                    previousNeedlePosition,
+                    currentNeedlePosition,
+                    threadCrossingStarted,
+                    buttonDistanceThreshold))
+            {
+                continue;
+            }
+
+            buttons.Remove(button);
+            Destroy(button);
+            OnButtonCollected();
+            break;
         }
-    
-       
     }
 
-    void OnButtonCollected(ButtonType type)
+    private void OnButtonCollected()
     {
         buttonsCollected++;
         GrowTail();
@@ -346,58 +298,80 @@ public class Sewing : MonoBehaviour
         }
     }
 
-    public void SpawnButton(Vector2 position, ButtonType buttonType)
+    public void SpawnRandomButton(Vector2 position)
     {
-        GameObject prefab = buttonPrefab;
-        if (buttonType == ButtonType.Attacker && redButtonPrefab != null)
+        List<ButtonSpawnOption> availableOptions = new List<ButtonSpawnOption>();
+        float totalWeight = 0f;
+        int aliveCount = Mathf.Max(1, AliveButtonCount);
+
+        foreach (ButtonSpawnOption option in buttonTypes)
         {
-            prefab = redButtonPrefab;
+            if (option == null || option.prefab == null || option.targetShare <= 0f) continue;
+            ButtonCollector collector = option.prefab.GetComponent<ButtonCollector>();
+            if (collector == null || string.IsNullOrWhiteSpace(collector.ButtonTypeId))
+            {
+                Debug.LogError($"Button prefab '{option.prefab.name}' needs a ButtonCollector with a type ID.", option.prefab);
+                continue;
+            }
+
+            float share = AliveButtonCountOf(collector.ButtonTypeId) / (float)aliveCount;
+            float weight = option.targetShare / (0.35f + share);
+            if (weight <= 0f) continue;
+            availableOptions.Add(option);
+            totalWeight += weight;
         }
 
-        if (prefab != null && buttonParent != null)
+        if (availableOptions.Count == 0)
         {
-            GameObject newButton = Instantiate(prefab, position, Quaternion.identity, buttonParent);
-            newButton.SetActive(true);
-            ButtonData buttonData = new ButtonData(buttonType);
-
-            Image img = newButton.GetComponent<Image>();
-            if (img != null)
-            {
-                img.color = buttonData.buttonColor;
-            }
-            else
-            {
-                SpriteRenderer sr = newButton.GetComponent<SpriteRenderer>();
-                if (sr != null)
-                {
-                    sr.color = buttonData.buttonColor;
-                    sr.sortingOrder = 6;
-                }
-                
-            }
-
-            if (buttonType == ButtonType.Attacker)
-            {
-                RedButton red = newButton.GetComponent<RedButton>();
-                if (red == null)
-                {
-                    red = newButton.AddComponent<RedButton>();
-                }
-                red.Initialize(this);
-            }
-
-            if (buttonType == ButtonType.Dodger && needleSprite != null && needleSprite.needleTransform != null)
-            {
-                DodgeButton dodge = newButton.GetComponent<DodgeButton>();
-                if (dodge == null)
-                {
-                    dodge = newButton.AddComponent<DodgeButton>();
-                }
-                dodge.Initialize(needleSprite.needleTransform);
-            }
-
-            buttons.Add(newButton, buttonData);
+            Debug.LogError("No valid button prefabs are configured on Sewing.", this);
+            return;
         }
+
+        float roll = Random.value * totalWeight;
+        foreach (ButtonSpawnOption option in availableOptions)
+        {
+            ButtonCollector collector = option.prefab.GetComponent<ButtonCollector>();
+            float share = AliveButtonCountOf(collector.ButtonTypeId) / (float)aliveCount;
+            roll -= option.targetShare / (0.35f + share);
+            if (roll <= 0f)
+            {
+                SpawnButton(position, option);
+                return;
+            }
+        }
+
+        SpawnButton(position, availableOptions[availableOptions.Count - 1]);
+    }
+
+    private void SpawnButton(Vector2 position, ButtonSpawnOption option)
+    {
+        if (option == null || option.prefab == null)
+        {
+            Debug.LogError("A button spawn option has no prefab assigned.", this);
+            return;
+        }
+
+        Transform parent = buttonParent != null ? buttonParent : transform;
+        GameObject newButton = Instantiate(option.prefab, position, Quaternion.identity, parent);
+        ButtonCollector collector = newButton.GetComponent<ButtonCollector>();
+        if (collector == null || string.IsNullOrWhiteSpace(collector.ButtonTypeId))
+        {
+            Debug.LogError($"Spawned button '{newButton.name}' needs a ButtonCollector with a type ID.", newButton);
+            Destroy(newButton);
+            return;
+        }
+
+        collector.Initialize();
+        MonoBehaviour[] components = newButton.GetComponents<MonoBehaviour>();
+        foreach (MonoBehaviour component in components)
+        {
+            if (component is IButtonSpawnInitializer initializer)
+            {
+                initializer.Initialize(this, GetNeedleTransform());
+            }
+        }
+
+        buttons.Add(newButton, collector);
     }
 
     public void DespawnButtonsBelow(float worldY)

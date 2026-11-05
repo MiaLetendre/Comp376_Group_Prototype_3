@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class DodgeButton : MonoBehaviour
+public class DodgeButton : MonoBehaviour, IButtonSpawnInitializer
 {
     [SerializeField] float detectionRadius = 3.5f;
     [SerializeField] float fleeSpeed = 4.5f;
@@ -14,7 +14,7 @@ public class DodgeButton : MonoBehaviour
     private Vector2 wanderDirection;
     private float nextWanderTime;
 
-    public void Initialize(Transform needleTransform)
+    public void Initialize(Sewing sewing, Transform needleTransform)
     {
         needle = needleTransform;
         cam = Camera.main;

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8123456789012345602}
   - component: {fileID: 8123456789012345603}
   - component: {fileID: 8123456789012345604}
+  - component: {fileID: 6000000000000000102}
   m_Layer: 5
   m_Name: RedButton
   m_TagString: Untagged
@@ -106,7 +107,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f3a8c1d74e2b4a9f8d6c0e5b1a7f3d92, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RedButton
   damage: 1
   knockback: 1.25
@@ -114,3 +115,18 @@ MonoBehaviour:
   clashColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   clashPunchScale: 1.18
   clashPunchDuration: 0.12
+--- !u!114 &6000000000000000102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8123456789012345601}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ca3a268aeb14847a0a0000000000002, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WrapButtonCollector
+  buttonTypeId: attacker
+  buttonColor: {r: 1, g: 0, b: 0, a: 1}
+  wrapsRequired: 1
