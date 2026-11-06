@@ -41,8 +41,6 @@ public class Sewing : MonoBehaviour
     {
         public GameObject prefab;
         [Min(0f)] public float targetShare = 0.25f;
-        public bool spawnAtStart;
-        public Vector2 initialPosition;
     }
 
     private struct Node
@@ -135,13 +133,6 @@ public class Sewing : MonoBehaviour
         lineRenderer.endWidth = tailSegmentWidth;
         needleSprite.needleTransform.rotation = Quaternion.Euler(0, 0, spriteRotaionOffset);
 
-        foreach (ButtonSpawnOption option in buttonTypes)
-        {
-            if (option != null && option.spawnAtStart)
-            {
-                SpawnButton(option.initialPosition, option);
-            }
-        }
     }
 
     void Update()
