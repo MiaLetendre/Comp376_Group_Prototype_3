@@ -8,8 +8,10 @@ public interface IButtonSpawnInitializer
 public abstract class ButtonCollector : MonoBehaviour
 {
     [SerializeField] string buttonTypeId;
+    [SerializeField, Min(0)] int scorePoints = 1;
 
     public string ButtonTypeId => buttonTypeId;
+    public int ScorePoints => scorePoints;
 
     public void Initialize()
     {

@@ -57,10 +57,12 @@ public class Sewing : MonoBehaviour
     private Vector2 lastMouseWorldPos;
     private NeedleData needleSprite;
     private int buttonsCollected;
+    private int score;
     private bool previousCursorVisibility;
     private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
 
     public int ButtonsCollected => buttonsCollected;
+    public int Score => score;
 
     public int AliveButtonCount
     {
@@ -382,14 +384,15 @@ public class Sewing : MonoBehaviour
 
             buttons.Remove(button);
             Destroy(button);
-            OnButtonCollected();
+            OnButtonCollected(collector.ScorePoints);
             break;
         }
     }
 
-    private void OnButtonCollected()
+    private void OnButtonCollected(int scorePoints)
     {
         buttonsCollected++;
+        score += scorePoints;
         GrowTail();
     }
 

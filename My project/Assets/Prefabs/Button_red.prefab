@@ -128,4 +128,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WrapButtonCollector
   buttonTypeId: attacker
+  scorePoints: 1
   wrapsRequired: 1
