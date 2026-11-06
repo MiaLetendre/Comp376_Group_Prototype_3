@@ -86,7 +86,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 5323911336490013448, guid: 8fdf4738e60faab40b4f7a66aee96d57, type: 3}
+  m_Sprite: {fileID: 5323911336490013448, guid: a0a72a2df7d281a44958d68e41d22d8a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -111,4 +111,4 @@ MonoBehaviour:
   buttonTypeId: strike
   scorePoints: 0
   strikesRequired: 3
-  requiredBodyCoverage: 0.75
+  requiredBodyCoverage: 0.3
