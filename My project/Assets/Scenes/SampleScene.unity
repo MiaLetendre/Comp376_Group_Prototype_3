@@ -635,7 +635,13 @@ MonoBehaviour:
   - prefab: {fileID: 8123456789012345601, guid: e7c1a4b92d6f4e0a8c3b5d1f7a9e2c40, type: 3}
     targetShare: 0.2
   - prefab: {fileID: 7479389638260734148, guid: 16000000000000000000000000000003, type: 3}
-    targetShare: 0
+    targetShare: 0.2
+  - prefab: {fileID: 7479389638260734148, guid: d4b93daf6f2d7664bacb2d0e6f128f5f, type: 3}
+    targetShare: 0.2
+  - prefab: {fileID: 7479389638260734148, guid: 805ad128b54fded4da422900dce2ae72, type: 3}
+    targetShare: 0.2
+  - prefab: {fileID: 7479389638260734148, guid: 201dc46405f7eed47a04d7f0ff9ddef3, type: 3}
+    targetShare: 0.2
   buttonDistanceThreshold: 2
 --- !u!120 &1734386638
 LineRenderer:
