@@ -3,8 +3,10 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class StrikeButtonCollector : ButtonCollector
 {
+    [Tooltip("The number of strikes required to collect this button.")]
     [SerializeField, Min(1)] int strikesRequired = 1;
-    [SerializeField, Range(0.9f, 1f)] float requiredBodyCoverage = 0.9f;
+    [Tooltip("The fraction of the button's diameter that the needle must cover to count as a strike.")]
+    [SerializeField, Range(0f, 1f)] float requiredBodyCoverage = 0.9f;
 
     private CircleCollider2D buttonCollider;
     private int currentStrikes;

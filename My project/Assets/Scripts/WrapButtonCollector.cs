@@ -3,6 +3,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class WrapButtonCollector : ButtonCollector
 {
+    [Tooltip("The number of wraps required to collect this button.")]
     [SerializeField, Min(1)] int wrapsRequired = 1;
     private int currentWraps;
     private float accumulatedAngle;
