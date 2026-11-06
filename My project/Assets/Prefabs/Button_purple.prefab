@@ -109,6 +109,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StrikeButtonCollector
   buttonTypeId: strike
-  scorePoints: 1
+  scorePoints: 30
   strikesRequired: 2
   requiredBodyCoverage: 0.75

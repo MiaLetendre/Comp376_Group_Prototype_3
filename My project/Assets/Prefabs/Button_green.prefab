@@ -110,7 +110,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WrapButtonCollector
   buttonTypeId: dodger
-  scorePoints: 1
+  scorePoints: 20
   wrapsRequired: 1
 --- !u!114 &6000000000000000105
 MonoBehaviour:

@@ -109,5 +109,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WrapButtonCollector
   buttonTypeId: shield
-  scorePoints: 1
+  scorePoints: 30
   wrapsRequired: 2

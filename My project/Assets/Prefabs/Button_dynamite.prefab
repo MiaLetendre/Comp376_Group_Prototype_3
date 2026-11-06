@@ -109,5 +109,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WrapButtonCollector
   buttonTypeId: regular
-  scorePoints: 1
+  scorePoints: 0
   wrapsRequired: 1
