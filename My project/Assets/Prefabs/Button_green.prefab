@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6000000000000000104}
   - component: {fileID: 6000000000000000105}
   m_Layer: 5
-  m_Name: DodgeButton
+  m_Name: Button_green
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -28,7 +28,7 @@ RectTransform:
   m_GameObject: {fileID: 7479389638260734148}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -9719.998}
-  m_LocalScale: {x: 100, y: 100, z: 1}
+  m_LocalScale: {x: 0.05, y: 0.05, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -87,8 +87,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 0.103773594, g: 0.08859915, b: 0.08859915, a: 1}
+  m_Sprite: {fileID: 712923248015389449, guid: 460101c045f585049981e4a219923f89, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -107,10 +107,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ca3a268aeb14847a0a0000000000002, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WrapButtonCollector
   buttonTypeId: dodger
-  buttonColor: {r: 0, g: 1, b: 0, a: 1}
   wrapsRequired: 1
 --- !u!114 &6000000000000000105
 MonoBehaviour:
@@ -122,7 +121,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DodgeButton
   detectionRadius: 3.5
   fleeSpeed: 4.5

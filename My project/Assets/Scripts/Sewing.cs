@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class Sewing : MonoBehaviour
 {
@@ -12,7 +13,11 @@ public class Sewing : MonoBehaviour
     [SerializeField] int tailNodes = 40;
     [SerializeField] float tailSegmentLength = .2f;
     [SerializeField] float tailSegmentWidth = .01f;
-    [SerializeField] float spriteRotaionOffset = 0f;
+    [SerializeField] float spriteRotaionOffset = -90f;
+    [SerializeField, Tooltip("Tip position as normalized coordinates within the visible needle sprite.")]
+    Vector2 needleTipNormalized = new Vector2(0.5f, 1f);
+    [SerializeField, Tooltip("Thread start as normalized coordinates within the visible needle sprite.")]
+    Vector2 needleTailNormalized = new Vector2(0.5f, 0f);
     [SerializeField, Min(1), Tooltip("Number of recent movement directions averaged to smooth the needle. Updates while playing.")]
     int directionSmoothingSamples = 10;
     [SerializeField, Min(0f)] float minimumDirectionMovementPixels = 2f;
@@ -212,18 +217,45 @@ public class Sewing : MonoBehaviour
     private void PositionNeedleHeadAt(Vector2 worldPosition)
     {
         Transform needle = needleSprite.needleTransform;
-        Vector3 headOffset = Vector3.zero;
-        if (needle is RectTransform rect)
-        {
-            Vector3 localHead = new Vector3(rect.rect.xMax, rect.rect.center.y, 0f);
-            headOffset = needle.TransformPoint(localHead) - needle.position;
-        }
-
-        needle.position = (Vector3)worldPosition - headOffset;
+        Vector3 tipOffset = needle.TransformVector(GetNeedlePointLocalPosition(needleTipNormalized));
+        needle.position = (Vector3)worldPosition - tipOffset;
         if (sewingPoint != null && sewingPoint != needle)
         {
             sewingPoint.position = worldPosition;
         }
+    }
+
+    private Vector3 GetNeedlePointLocalPosition(Vector2 normalizedPosition)
+    {
+        if (!(needleSprite.needleTransform is RectTransform rect))
+        {
+            return Vector3.zero;
+        }
+
+        Rect visibleRect = rect.rect;
+        Image image = needleSprite.needleTransform.GetComponent<Image>();
+        if (image != null && image.preserveAspect && image.sprite != null)
+        {
+            float spriteAspect = image.sprite.rect.width / image.sprite.rect.height;
+            float rectAspect = visibleRect.width / visibleRect.height;
+            if (spriteAspect > rectAspect)
+            {
+                float height = visibleRect.width / spriteAspect;
+                visibleRect.yMin += (visibleRect.height - height) * 0.5f;
+                visibleRect.yMax = visibleRect.yMin + height;
+            }
+            else
+            {
+                float width = visibleRect.height * spriteAspect;
+                visibleRect.xMin += (visibleRect.width - width) * 0.5f;
+                visibleRect.xMax = visibleRect.xMin + width;
+            }
+        }
+
+        return new Vector3(
+            Mathf.Lerp(visibleRect.xMin, visibleRect.xMax, normalizedPosition.x),
+            Mathf.Lerp(visibleRect.yMin, visibleRect.yMax, normalizedPosition.y),
+            0f);
     }
 
     private void UpdateNeedleDirection(Vector2 movementDirection)
@@ -518,8 +550,7 @@ public class Sewing : MonoBehaviour
         Transform needle = needleSprite.needleTransform;
         if (needle is RectTransform rect)
         {
-            Vector3 localHead = new Vector3(rect.rect.xMax, rect.rect.center.y, 0f);
-            return needle.TransformPoint(localHead);
+            return needle.TransformPoint(GetNeedlePointLocalPosition(needleTipNormalized));
         }
 
         return needle.position;
@@ -535,8 +566,7 @@ public class Sewing : MonoBehaviour
         Transform needle = needleSprite.needleTransform;
         if (needle is RectTransform rect)
         {
-            Vector3 localTail = new Vector3(rect.rect.xMin, rect.rect.center.y, 0f);
-            return needle.TransformPoint(localTail);
+            return needle.TransformPoint(GetNeedlePointLocalPosition(needleTailNormalized));
         }
 
         return needle.position;

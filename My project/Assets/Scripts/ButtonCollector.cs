@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public interface IButtonSpawnInitializer
 {
@@ -9,25 +8,15 @@ public interface IButtonSpawnInitializer
 public abstract class ButtonCollector : MonoBehaviour
 {
     [SerializeField] string buttonTypeId;
-    [SerializeField] Color buttonColor = Color.white;
 
     public string ButtonTypeId => buttonTypeId;
 
     public void Initialize()
     {
-        Image image = GetComponent<Image>();
-        if (image != null)
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
         {
-            image.color = buttonColor;
-        }
-        else
-        {
-            SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-            if (spriteRenderer != null)
-            {
-                spriteRenderer.color = buttonColor;
-                spriteRenderer.sortingOrder = 6;
-            }
+            spriteRenderer.sortingOrder = 6;
         }
     }
 
