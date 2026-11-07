@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
 [DisallowMultipleComponent]
@@ -45,8 +46,16 @@ public class LevelAutoscroll : MonoBehaviour
     private readonly List<GameObject> spawnedWalls = new List<GameObject>();
     private readonly List<Vector2> spawnedButtonPositions = new List<Vector2>();
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    // AfterSceneLoad runs once per play session. Restart loads the scene again,
+    // which destroys the old spawner, so this has to run on every scene load.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         Sewing sewing = Object.FindFirstObjectByType<Sewing>();
         if (sewing == null) return;

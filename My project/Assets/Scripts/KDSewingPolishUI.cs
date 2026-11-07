@@ -14,7 +14,7 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class KDSewingPolishUI : MonoBehaviour
 {
-    private enum Page { Playing, Tutorial, Pause, Help }
+    private enum Page { Playing, Tutorial, Pause, Help, Death }
 
     private const float ReferenceWidth = 960f;
     private const float ReferenceHeight = 540f;
@@ -23,6 +23,9 @@ public sealed class KDSewingPolishUI : MonoBehaviour
 
     private Sewing sewing;
     private Page page = Page.Playing;
+    private Page helpReturn = Page.Pause;
+    // The needle is created in Sewing.Start. Until that has happened, it looks dead.
+    private bool watchForDeath;
     private bool wasSewingEnabled;
     private float previousTimeScale = 1f;
     private Texture2D circleTexture;
@@ -65,6 +68,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private void ConnectToCurrentScene()
     {
         // Restores the time scale if a restart happened from the pause menu.
+        watchForDeath = false;
         if (page != Page.Playing) UnfreezeGame();
         sewing = FindFirstObjectByType<Sewing>();
 
@@ -76,14 +80,25 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private void Update()
     {
         if (sewing == null) return;
+
+        if (page == Page.Playing)
+        {
+            if (sewing.IsNeedleAlive()) watchForDeath = true;
+            else if (watchForDeath)
+            {
+                ShowOverlay(Page.Death);
+                return;
+            }
+        }
+
         Keyboard keys = Keyboard.current;
         if (keys == null) return;
 
         if (keys.escapeKey.wasPressedThisFrame)
         {
             if (page == Page.Playing) ShowOverlay(Page.Pause);
-            else if (page == Page.Help) page = Page.Pause;
-            else Resume();
+            else if (page == Page.Help) page = helpReturn;
+            else if (page != Page.Death) Resume();
         }
         else if (page == Page.Tutorial &&
                  (keys.enterKey.wasPressedThisFrame || keys.spaceKey.wasPressedThisFrame))
@@ -92,6 +107,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         }
         else if (page == Page.Playing && keys.hKey.wasPressedThisFrame)
         {
+            helpReturn = Page.Pause;
             ShowOverlay(Page.Help);
         }
     }
@@ -159,6 +175,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
             DrawRect(new Rect(155, 60, 650, 7), new Color(.65f, .42f, .91f, 1f));
 
             if (page == Page.Pause) DrawPause();
+            else if (page == Page.Death) DrawDeath();
             else DrawTutorial(page == Page.Tutorial);
         }
 
@@ -171,9 +188,25 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         GUI.Label(new Rect(200, 144, 560, 35), "Game paused", subheadingStyle);
 
         if (Button(new Rect(333, 205, 294, 48), "Resume   [ESC]")) Resume();
-        if (Button(new Rect(333, 266, 294, 48), "How to Play")) page = Page.Help;
+        if (Button(new Rect(333, 266, 294, 48), "How to Play")) OpenHelp(Page.Pause);
         if (Button(new Rect(333, 327, 294, 48), "Restart")) Restart();
         if (Button(new Rect(333, 388, 294, 48), "Quit Game")) Quit();
+    }
+
+    private void DrawDeath()
+    {
+        GUI.Label(new Rect(200, 94, 560, 55), "SEWING SNAKE", headingStyle);
+        GUI.Label(new Rect(200, 144, 560, 35), "you died", subheadingStyle);
+
+        if (Button(new Rect(333, 220, 294, 48), "Restart")) Restart();
+        if (Button(new Rect(333, 281, 294, 48), "How to Play")) OpenHelp(Page.Death);
+        if (Button(new Rect(333, 342, 294, 48), "Quit Game")) Quit();
+    }
+
+    private void OpenHelp(Page returnPage)
+    {
+        helpReturn = returnPage;
+        page = Page.Help;
     }
 
     private void DrawTutorial(bool firstTime)
@@ -192,7 +225,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         if (Button(new Rect(323, 410, 314, 46), label))
         {
             if (firstTime) Resume();
-            else page = Page.Pause;
+            else page = helpReturn;
         }
     }
 
