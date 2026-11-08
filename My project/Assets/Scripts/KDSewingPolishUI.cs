@@ -86,7 +86,9 @@ public sealed class KDSewingPolishUI : MonoBehaviour
             if (sewing.IsNeedleAlive()) watchForDeath = true;
             else if (watchForDeath)
             {
+                
                 ShowOverlay(Page.Death);
+
                 return;
             }
         }
@@ -120,6 +122,8 @@ public sealed class KDSewingPolishUI : MonoBehaviour
             wasSewingEnabled = sewing != null && sewing.enabled;
             if (sewing != null) sewing.enabled = false;
             Time.timeScale = 0f;
+            Cursor.visible = true;
+            //Cursor.lockState = CursorLockMode.None;
         }
         page = next;
     }
@@ -133,6 +137,8 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private void UnfreezeGame()
     {
         Time.timeScale = previousTimeScale;
+        Cursor.visible = false;
+        //Cursor.lockState = CursorLockMode.Locked;
         if (sewing != null && wasSewingEnabled) sewing.enabled = true;
         page = Page.Playing;
     }
@@ -240,16 +246,21 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         // continues animating while the gameplay is paused.
         GUI.color = new Color(.83f, .71f, 1f, 1f);
         float amount = Mathf.Repeat(Time.unscaledTime * .22f, 1f);
-        int segments = Mathf.Max(1, Mathf.RoundToInt(56 * amount));
+        int totalSegments = 96;
+        int segments = Mathf.Max(1, Mathf.RoundToInt(totalSegments * amount));
+        //int totalSegments = 56;
         Vector2 previous = new Vector2(cx + radius, cy);
+        //float startAngle = 0f;
+        //Vector2 previous = new Vector2(cx + Mathf.Cos(startAngle) * radius, cy + Mathf.Sin(startAngle) * radius);
+        // THIS HERE IS THE PROBLEM!!!
         for (int i = 1; i <= segments; i++)
         {
-            float angle = i * Mathf.PI * 2f / 56f;
-            Vector2 next = new Vector2(cx + Mathf.Cos(angle) * radius,
-                                       cy + Mathf.Sin(angle) * radius);
+            float angle = i * Mathf.PI * 2f / totalSegments;
+            Vector2 next = new Vector2(cx + Mathf.Cos(angle) * radius, cy + Mathf.Sin(angle) * radius);
             DrawLine(previous, next, 4f);
             previous = next;
         }
+        
 
         GUI.color = Color.white;
         GUI.DrawTexture(new Rect(cx - 32, cy - 32, 64, 64), circleTexture);
@@ -259,8 +270,8 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         float needleAngle = amount * Mathf.PI * 2f;
         GUI.color = Color.white;
         GUI.DrawTexture(new Rect(cx + Mathf.Cos(needleAngle) * radius - 7,
-                                 cy + Mathf.Sin(needleAngle) * radius - 7,
-                                 14, 14), circleTexture);
+                                cy + Mathf.Sin(needleAngle) * radius - 7,
+                                14, 14), circleTexture);
         GUI.color = old;
     }
 
@@ -269,9 +280,13 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         Vector2 delta = to - from;
         if (delta.sqrMagnitude < .00001f) return;
         Matrix4x4 saved = GUI.matrix;
-        GUIUtility.RotateAroundPivot(Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg, from);
-        GUI.DrawTexture(new Rect(from.x, from.y - thickness / 2f,
-                                 delta.magnitude, thickness), Texture2D.whiteTexture);
+        
+        float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
+
+        //GUIUtility.RotateAroundPivot(0, from);
+        //ok so I fixed the issue with the GUI giant circle, by making it a solid line
+        GUI.matrix = saved * Matrix4x4.TRS(from, Quaternion.Euler(0, 0, angle), Vector3.one) * Matrix4x4.TRS(-from, Quaternion.identity, Vector3.one);
+        GUI.DrawTexture(new Rect(from.x, from.y - thickness / 2f, delta.magnitude, thickness), Texture2D.whiteTexture);
         GUI.matrix = saved;
     }
 
