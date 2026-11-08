@@ -60,6 +60,7 @@ public class Sewing : MonoBehaviour
     private int score;
     private bool previousCursorVisibility;
     private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
+    private float lastMovmentAngle = 0f; 
 
     public int ButtonsCollected => buttonsCollected;
     public int Score => score;
@@ -162,8 +163,11 @@ public class Sewing : MonoBehaviour
             UpdateNeedleDirection(directionDelta.normalized);
             lastDirectionSampleScreenPosition = screenPosition;
         }
-
+        
         float movementAngle = Mathf.Atan2(lastNeedleDirection.y, lastNeedleDirection.x) * Mathf.Rad2Deg;
+        //movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, 0.5f);
+        movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, 0.15f);
+        
         needleSprite.needleTransform.rotation = Quaternion.Euler(
             0f,
             0f,
@@ -173,6 +177,7 @@ public class Sewing : MonoBehaviour
         nodesArray[0] = new Node { position = GetNeedleTailPosition() };
         for (int i = 1; i < tailNodes; i++)
         {
+            
             float nodeAngle = Mathf.Atan2(
                 nodesArray[i - 1].position.y - nodesArray[i].position.y,
                 nodesArray[i - 1].position.x - nodesArray[i].position.x);
@@ -200,6 +205,7 @@ public class Sewing : MonoBehaviour
             worldMousePos,
             threadCrossingStarted);
         lastMouseWorldPos = worldMousePos;
+        lastMovmentAngle = movementAngle;
     }
 
     private void OnDisable()
@@ -267,8 +273,9 @@ public class Sewing : MonoBehaviour
         {
             return;
         }
-
+        
         lastNeedleDirection = averageDirection.normalized;
+        
     }
 
     private void EnsureDirectionHistorySize()
