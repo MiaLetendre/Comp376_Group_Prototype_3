@@ -36,6 +36,9 @@ public class Sewing : MonoBehaviour
     [SerializeField] List<ButtonSpawnOption> buttonTypes = new List<ButtonSpawnOption>();
     [SerializeField] float buttonDistanceThreshold = 2f;
 
+    [Header("Needle")]
+    [SerializeField] float needleLerpRotation = 0.15f;
+
     [System.Serializable]
     public class ButtonSpawnOption
     {
@@ -166,7 +169,7 @@ public class Sewing : MonoBehaviour
         
         float movementAngle = Mathf.Atan2(lastNeedleDirection.y, lastNeedleDirection.x) * Mathf.Rad2Deg;
         //movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, 0.5f);
-        movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, 0.15f *Time.deltaTime * 60f);
+        movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, needleLerpRotation *Time.deltaTime * 60f);
         
         needleSprite.needleTransform.rotation = Quaternion.Euler(
             0f,
@@ -273,7 +276,7 @@ public class Sewing : MonoBehaviour
         {
             return;
         }
-        
+        averageDirection /= directionHistoryCount;
         lastNeedleDirection = averageDirection.normalized;
         
     }
@@ -400,7 +403,7 @@ public class Sewing : MonoBehaviour
     {
         buttonsCollected++;
         score += scorePoints;
-        GrowTail();
+        //GrowTail();
     }
 
     void GrowTail()

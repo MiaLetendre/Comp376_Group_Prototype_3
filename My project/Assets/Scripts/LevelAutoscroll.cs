@@ -8,7 +8,7 @@ public class LevelAutoscroll : MonoBehaviour
     [Header("Scroll")]
     [SerializeField] float baseScrollSpeed = 1.6f;
     [SerializeField] float maxScrollSpeed = 6f;
-    [SerializeField] float rampDuration = 90f;
+    [SerializeField] float rampDuration = 250f;
 
     [Header("Spawning")]
     [SerializeField] float spawnAheadDistance = 12f;
