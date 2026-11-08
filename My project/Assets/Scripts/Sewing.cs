@@ -166,7 +166,7 @@ public class Sewing : MonoBehaviour
         
         float movementAngle = Mathf.Atan2(lastNeedleDirection.y, lastNeedleDirection.x) * Mathf.Rad2Deg;
         //movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, 0.5f);
-        movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, 0.15f);
+        movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, 0.15f *Time.deltaTime * 60f);
         
         needleSprite.needleTransform.rotation = Quaternion.Euler(
             0f,
