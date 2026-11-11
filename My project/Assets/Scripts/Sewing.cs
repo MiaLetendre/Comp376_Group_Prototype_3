@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;   
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -37,7 +38,11 @@ public class Sewing : MonoBehaviour
     [SerializeField] float buttonDistanceThreshold = 2f;
 
     [Header("Needle")]
-    [SerializeField] float needleLerpRotation = 0.15f;
+    [SerializeField] float needleLerpRotation = 0.5f;
+    
+    [Header("Button Additives")]
+    [SerializeField] float waitTimeStrike = 5; //slwos down time for x seconds after getting a strike buttoin
+
 
     [System.Serializable]
     public class ButtonSpawnOption
@@ -374,6 +379,7 @@ public class Sewing : MonoBehaviour
         List<GameObject> buttonKeys = new List<GameObject>(buttons.Keys);
         for (int i = 0; i < buttonKeys.Count; i++)
         {
+
             GameObject button = buttonKeys[i];
             if (button == null ||
                 !buttons.TryGetValue(button, out ButtonCollector collector) ||
@@ -389,9 +395,14 @@ public class Sewing : MonoBehaviour
                     threadCrossingStarted,
                     buttonDistanceThreshold))
             {
+
                 continue;
             }
-
+            if (collector.ButtonTypeId.ToString() == "strike")
+            {
+                slowTime();
+                //bonusPoints = true;
+            }
             buttons.Remove(button);
             Destroy(button);
             OnButtonCollected(collector.ScorePoints);
@@ -609,6 +620,18 @@ public class Sewing : MonoBehaviour
         {
             Debug.Log("Needle broke! Buttons collected: " + buttonsCollected);
         }
+    }
+
+    public void slowTime()
+    {
+        Time.timeScale = 0.5f;
+        StartCoroutine(ResetTimeScale());
+    }
+
+    IEnumerator ResetTimeScale()
+    {
+        yield return new WaitForSecondsRealtime(waitTime);
+        Time.timeScale = 1f;
     }
 
 
