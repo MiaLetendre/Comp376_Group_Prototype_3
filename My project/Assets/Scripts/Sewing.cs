@@ -1,5 +1,5 @@
 using UnityEngine;
-using System.Collections;   
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -39,9 +39,13 @@ public class Sewing : MonoBehaviour
 
     [Header("Needle")]
     [SerializeField] float needleLerpRotation = 0.5f;
-    
+
     [Header("Button Additives")]
     [SerializeField] float waitTimeStrike = 5; //slwos down time for x seconds after getting a strike buttoin
+
+    [Header("Damage Effects")]
+    [SerializeField, Min(0f)] float dynamiteScreenShakeDuration = 0.35f;
+    [SerializeField, Min(0f)] float dynamiteScreenShakeMagnitude = 0.18f;
 
 
     [System.Serializable]
@@ -68,10 +72,14 @@ public class Sewing : MonoBehaviour
     private int score;
     private bool previousCursorVisibility;
     private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
-    private float lastMovmentAngle = 0f; 
+    private float lastMovmentAngle = 0f;
+    private Transform shakeCamera;
+    private Vector3 cameraShakeOffset;
+    private float cameraShakeTimer;
 
     public int ButtonsCollected => buttonsCollected;
     public int Score => score;
+    public event System.Action<Vector2> DynamiteCaptured;
 
     public int AliveButtonCount
     {
@@ -171,11 +179,11 @@ public class Sewing : MonoBehaviour
             UpdateNeedleDirection(directionDelta.normalized);
             lastDirectionSampleScreenPosition = screenPosition;
         }
-        
+
         float movementAngle = Mathf.Atan2(lastNeedleDirection.y, lastNeedleDirection.x) * Mathf.Rad2Deg;
         //movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, 0.5f);
-        movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, needleLerpRotation *Time.deltaTime * 60f);
-        
+        movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, needleLerpRotation * Time.deltaTime * 60f);
+
         needleSprite.needleTransform.rotation = Quaternion.Euler(
             0f,
             0f,
@@ -185,7 +193,7 @@ public class Sewing : MonoBehaviour
         nodesArray[0] = new Node { position = GetNeedleTailPosition() };
         for (int i = 1; i < tailNodes; i++)
         {
-            
+
             float nodeAngle = Mathf.Atan2(
                 nodesArray[i - 1].position.y - nodesArray[i].position.y,
                 nodesArray[i - 1].position.x - nodesArray[i].position.x);
@@ -219,6 +227,46 @@ public class Sewing : MonoBehaviour
     private void OnDisable()
     {
         Cursor.visible = previousCursorVisibility;
+        StopScreenShake();
+    }
+
+    private void LateUpdate()
+    {
+        if (shakeCamera == null && cameraShakeTimer <= 0f)
+        {
+            return;
+        }
+
+        if (shakeCamera == null)
+        {
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                return;
+            }
+
+            shakeCamera = mainCamera.transform;
+        }
+
+        // Remove the previous frame's offset so camera movement (such as autoscroll) remains intact.
+        Vector3 basePosition = shakeCamera.position - cameraShakeOffset;
+        cameraShakeTimer = Mathf.Max(0f, cameraShakeTimer - Time.unscaledDeltaTime);
+        if (cameraShakeTimer > 0f && dynamiteScreenShakeDuration > 0f)
+        {
+            float intensity = cameraShakeTimer / dynamiteScreenShakeDuration;
+            Vector2 randomOffset = Random.insideUnitCircle * (dynamiteScreenShakeMagnitude * intensity);
+            cameraShakeOffset = new Vector3(randomOffset.x, randomOffset.y, 0f);
+        }
+        else
+        {
+            cameraShakeOffset = Vector3.zero;
+        }
+
+        shakeCamera.position = basePosition + cameraShakeOffset;
+        if (cameraShakeTimer <= 0f)
+        {
+            shakeCamera = null;
+        }
     }
 
     private void PositionNeedleHeadAt(Vector2 worldPosition)
@@ -283,7 +331,7 @@ public class Sewing : MonoBehaviour
         }
         averageDirection /= directionHistoryCount;
         lastNeedleDirection = averageDirection.normalized;
-        
+
     }
 
     private void EnsureDirectionHistorySize()
@@ -398,16 +446,56 @@ public class Sewing : MonoBehaviour
 
                 continue;
             }
-            if (collector.ButtonTypeId.ToString() == "strike")
+            bool dynamiteButton = collector.ButtonTypeId == "dynamite";
+            if (dynamiteButton)
             {
-                slowTime();
+                DamageNeedle(1, Vector2.zero);
+                TriggerScreenShake();
+                DynamiteCaptured?.Invoke(button.transform.position);
+            }
+            else if (collector.ButtonTypeId == "strike")
+            {
+                // slowTime();
                 //bonusPoints = true;
             }
             buttons.Remove(button);
             Destroy(button);
-            OnButtonCollected(collector.ScorePoints);
+            if (!dynamiteButton)
+            {
+                OnButtonCollected(collector.ScorePoints);
+            }
             break;
         }
+    }
+
+    private void TriggerScreenShake()
+    {
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            return;
+        }
+
+        if (shakeCamera != mainCamera.transform && shakeCamera != null)
+        {
+            shakeCamera.position -= cameraShakeOffset;
+            cameraShakeOffset = Vector3.zero;
+        }
+
+        shakeCamera = mainCamera.transform;
+        cameraShakeTimer = dynamiteScreenShakeDuration;
+    }
+
+    private void StopScreenShake()
+    {
+        if (shakeCamera != null && cameraShakeOffset != Vector3.zero)
+        {
+            shakeCamera.position -= cameraShakeOffset;
+        }
+
+        shakeCamera = null;
+        cameraShakeOffset = Vector3.zero;
+        cameraShakeTimer = 0f;
     }
 
     private void OnButtonCollected(int scorePoints)
@@ -630,7 +718,7 @@ public class Sewing : MonoBehaviour
 
     IEnumerator ResetTimeScale()
     {
-        yield return new WaitForSecondsRealtime(waitTime);
+        yield return new WaitForSecondsRealtime(waitTimeStrike);
         Time.timeScale = 1f;
     }
 

@@ -16,6 +16,7 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
     {
         public Vector3 worldPosition;
         public int points;
+        public bool isDynamite;
         public float age;
     }
 
@@ -52,6 +53,24 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
         previousCollected = sewing.ButtonsCollected;
         previousScore = sewing.Score;
         bestScore = Mathf.Max(0, PlayerPrefs.GetInt(BestScoreKey, 0));
+    }
+
+    private void OnEnable()
+    {
+        if (sewing != null)
+        {
+            sewing.DynamiteCaptured += ShowDynamiteFeedback;
+        }
+    }
+
+    private void ShowDynamiteFeedback(Vector2 worldPosition)
+    {
+        feedback.Add(new Feedback
+        {
+            worldPosition = worldPosition,
+            isDynamite = true,
+            age = 0f
+        });
     }
 
     // Sewing collects buttons in Update(). LateUpdate() detects confirmed
@@ -144,7 +163,9 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
             Vector2 center = new Vector2(screenPoint.x, Screen.height - screenPoint.y);
 
             // Six outward streaks make the slash noticeable even for a 0-point button.
-            GUI.color = new Color(1f, 0.86f, 0.45f, 0.85f * alpha);
+            GUI.color = burst.isDynamite
+                ? new Color(1f, 0.2f, 0.2f, 0.9f * alpha)
+                : new Color(1f, 0.86f, 0.45f, 0.85f * alpha);
             float radius = Mathf.Lerp(4f, 28f, t) * scale;
             for (int i = 0; i < 6; i++)
             {
@@ -155,8 +176,12 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
                 GUI.matrix = previousMatrix;
             }
 
-            GUI.color = new Color(1f, 1f, 1f, alpha);
-            string label = burst.points > 0 ? "+" + burst.points : "NICE!";
+            GUI.color = burst.isDynamite
+                ? new Color(1f, 0.15f, 0.15f, alpha)
+                : new Color(1f, 1f, 1f, alpha);
+            string label = burst.isDynamite
+                ? "BOOM"
+                : burst.points > 0 ? "+" + burst.points : "NICE!";
             GUI.Label(new Rect(center.x - 60f * scale,
                 center.y - (55f + 35f * t) * scale,
                 120f * scale, 32f * scale), label, pointsStyle);
@@ -195,7 +220,15 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
         bestScoreDirty = false;
     }
 
-    private void OnDisable() { SaveBestScore(); }
+    private void OnDisable()
+    {
+        if (sewing != null)
+        {
+            sewing.DynamiteCaptured -= ShowDynamiteFeedback;
+        }
+
+        SaveBestScore();
+    }
     private void OnApplicationQuit() { SaveBestScore(); }
     private void OnApplicationPause(bool paused)
     {
