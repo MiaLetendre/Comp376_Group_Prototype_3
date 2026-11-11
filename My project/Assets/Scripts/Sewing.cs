@@ -1,5 +1,5 @@
 using UnityEngine;
-using System.Collections;   
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -39,7 +39,7 @@ public class Sewing : MonoBehaviour
 
     [Header("Needle")]
     [SerializeField] float needleLerpRotation = 0.5f;
-    
+
     [Header("Button Additives")]
     [SerializeField] float waitTimeStrike = 5; //slwos down time for x seconds after getting a strike buttoin
 
@@ -72,7 +72,7 @@ public class Sewing : MonoBehaviour
     private int score;
     private bool previousCursorVisibility;
     private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
-    private float lastMovmentAngle = 0f; 
+    private float lastMovmentAngle = 0f;
     private Transform shakeCamera;
     private Vector3 cameraShakeOffset;
     private float cameraShakeTimer;
@@ -179,11 +179,11 @@ public class Sewing : MonoBehaviour
             UpdateNeedleDirection(directionDelta.normalized);
             lastDirectionSampleScreenPosition = screenPosition;
         }
-        
+
         float movementAngle = Mathf.Atan2(lastNeedleDirection.y, lastNeedleDirection.x) * Mathf.Rad2Deg;
         //movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, 0.5f);
-        movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, needleLerpRotation *Time.deltaTime * 60f);
-        
+        movementAngle = Mathf.LerpAngle(lastMovmentAngle, movementAngle, needleLerpRotation * Time.deltaTime * 60f);
+
         needleSprite.needleTransform.rotation = Quaternion.Euler(
             0f,
             0f,
@@ -193,7 +193,7 @@ public class Sewing : MonoBehaviour
         nodesArray[0] = new Node { position = GetNeedleTailPosition() };
         for (int i = 1; i < tailNodes; i++)
         {
-            
+
             float nodeAngle = Mathf.Atan2(
                 nodesArray[i - 1].position.y - nodesArray[i].position.y,
                 nodesArray[i - 1].position.x - nodesArray[i].position.x);
@@ -331,7 +331,7 @@ public class Sewing : MonoBehaviour
         }
         averageDirection /= directionHistoryCount;
         lastNeedleDirection = averageDirection.normalized;
-        
+
     }
 
     private void EnsureDirectionHistorySize()
@@ -455,7 +455,7 @@ public class Sewing : MonoBehaviour
             }
             else if (collector.ButtonTypeId == "strike")
             {
-                slowTime();
+                // slowTime();
                 //bonusPoints = true;
             }
             buttons.Remove(button);
