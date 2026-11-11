@@ -451,7 +451,6 @@ public class Sewing : MonoBehaviour
             if (dynamiteButton)
             {
                 DamageNeedle(1, Vector2.zero);
-                TriggerScreenShake();
                 DynamiteCaptured?.Invoke(button.transform.position);
             }
             else if (collector.ButtonTypeId == "heart")
@@ -701,7 +700,12 @@ public class Sewing : MonoBehaviour
     {
         if (needleSprite == null || needleSprite.health <= 0) return;
 
+        int previousHealth = needleSprite.health;
         needleSprite.health = Mathf.Max(0, needleSprite.health - amount);
+        if (needleSprite.health < previousHealth)
+        {
+            TriggerScreenShake();
+        }
 
         if (needleSprite.needleTransform != null && knockback.sqrMagnitude > 0.0001f)
         {
