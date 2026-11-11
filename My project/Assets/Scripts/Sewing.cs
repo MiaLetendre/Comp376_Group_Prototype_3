@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 public class Sewing : MonoBehaviour
 {
+    private const int MaxNeedleHealth = 3;
 
     [Header("Sewing Settings")]
     [SerializeField] LineRenderer lineRenderer;
@@ -108,7 +109,7 @@ public class Sewing : MonoBehaviour
     public class NeedleData
     {
         public Transform needleTransform;
-        public int health = 3;
+        public int health = MaxNeedleHealth;
     }
 
     void Start()
@@ -453,6 +454,10 @@ public class Sewing : MonoBehaviour
                 TriggerScreenShake();
                 DynamiteCaptured?.Invoke(button.transform.position);
             }
+            else if (collector.ButtonTypeId == "heart")
+            {
+                RestoreNeedleHealth(1);
+            }
             else if (collector.ButtonTypeId == "strike")
             {
                 // slowTime();
@@ -678,6 +683,13 @@ public class Sewing : MonoBehaviour
     public int GetNeedleHealth()
     {
         return needleSprite != null ? needleSprite.health : 0;
+    }
+
+    private void RestoreNeedleHealth(int amount)
+    {
+        if (needleSprite == null || needleSprite.health <= 0) return;
+
+        needleSprite.health = Mathf.Min(MaxNeedleHealth, needleSprite.health + amount);
     }
 
     public bool IsNeedleAlive()
