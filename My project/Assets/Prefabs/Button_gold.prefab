@@ -112,3 +112,5 @@ MonoBehaviour:
   scorePoints: 0
   strikesRequired: 3
   requiredBodyCoverage: 0.3
+  strikeScaleMultiplier: 1.12
+  strikeScaleDuration: 0.18

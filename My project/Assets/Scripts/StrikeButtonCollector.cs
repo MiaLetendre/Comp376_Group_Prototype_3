@@ -7,14 +7,23 @@ public class StrikeButtonCollector : ButtonCollector
     [SerializeField, Min(1)] int strikesRequired = 1;
     [Tooltip("The fraction of the button's diameter that the needle must cover to count as a strike.")]
     [SerializeField, Range(0f, 1f)] float requiredBodyCoverage = 0.9f;
+    [Tooltip("How much the button scales up when a strike is counted.")]
+    [SerializeField, Min(1f)] float strikeScaleMultiplier = 1.12f;
+    [Tooltip("How long the scale pulse takes to grow and return to normal.")]
+    [SerializeField, Min(0.01f)] float strikeScaleDuration = 0.18f;
 
     private CircleCollider2D buttonCollider;
     private int currentStrikes;
     private float currentStrikePathLength;
     private bool strikeCountedThisPass;
+    private Vector3 originalScale;
+    private Vector3 pulseStartScale;
+    private float strikeScaleElapsed = -1f;
 
     private void Awake()
     {
+        originalScale = transform.localScale;
+
         buttonCollider = GetComponent<CircleCollider2D>();
         if (buttonCollider == null)
         {
@@ -29,6 +38,35 @@ public class StrikeButtonCollector : ButtonCollector
             }
 
             buttonCollider = circle;
+        }
+    }
+
+    private void Update()
+    {
+        ApplyStrikeEffect();
+    }
+
+    private void ApplyStrikeEffect()
+    {
+        if (strikeScaleElapsed < 0f) return;
+
+        strikeScaleElapsed += Time.deltaTime;
+        float progress = Mathf.Clamp01(strikeScaleElapsed / strikeScaleDuration);
+        Vector3 peakScale = originalScale * strikeScaleMultiplier;
+
+        if (progress < 0.5f)
+        {
+            float growProgress = Mathf.SmoothStep(0f, 1f, progress * 2f);
+            transform.localScale = Vector3.Lerp(pulseStartScale, peakScale, growProgress);
+            return;
+        }
+
+        float shrinkProgress = Mathf.SmoothStep(0f, 1f, (progress - 0.5f) * 2f);
+        transform.localScale = Vector3.Lerp(peakScale, originalScale, shrinkProgress);
+        if (progress >= 1f)
+        {
+            transform.localScale = originalScale;
+            strikeScaleElapsed = -1f;
         }
     }
 
@@ -70,6 +108,8 @@ public class StrikeButtonCollector : ButtonCollector
             {
                 currentStrikes++;
                 strikeCountedThisPass = true;
+                pulseStartScale = transform.localScale;
+                strikeScaleElapsed = 0f;
                 if (currentStrikes >= strikesRequired)
                 {
                     return true;
