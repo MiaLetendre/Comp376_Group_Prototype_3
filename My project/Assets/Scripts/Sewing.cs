@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -33,11 +32,6 @@ public class Sewing : MonoBehaviour
     [SerializeField] float maxTailSegmentWidth = 0.06f;
     [SerializeField] float maxTailSegmentLength = 0.45f;
 
-    [Header("Button Spawning")]
-    [SerializeField] Transform buttonParent;
-    [SerializeField] List<ButtonSpawnOption> buttonTypes = new List<ButtonSpawnOption>();
-    [SerializeField] float buttonDistanceThreshold = 2f;
-
     [Header("Needle")]
     [SerializeField] float needleLerpRotation = 0.5f;
 
@@ -47,14 +41,6 @@ public class Sewing : MonoBehaviour
     [Header("Damage Effects")]
     [SerializeField, Min(0f)] float dynamiteScreenShakeDuration = 0.35f;
     [SerializeField, Min(0f)] float dynamiteScreenShakeMagnitude = 0.18f;
-
-
-    [System.Serializable]
-    public class ButtonSpawnOption
-    {
-        public GameObject prefab;
-        [Min(0f)] public float targetShare = 0.25f;
-    }
 
     private struct Node
     {
@@ -69,47 +55,43 @@ public class Sewing : MonoBehaviour
     private int directionHistoryCount;
     private Vector2 lastMouseWorldPos;
     private NeedleData needleSprite;
-    private int buttonsCollected;
-    private int score;
     private bool previousCursorVisibility;
-    private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
+    private SewingButtonManager buttonManager;
     private float lastMovmentAngle = 0f;
     private Transform shakeCamera;
     private Vector3 cameraShakeOffset;
     private float cameraShakeTimer;
 
-    public int ButtonsCollected => buttonsCollected;
-    public int Score => score;
-    public event System.Action<Vector2> DynamiteCaptured;
-
-    public int AliveButtonCount
+    public int ButtonsCollected => buttonManager != null ? buttonManager.ButtonsCollected : 0;
+    public int Score => buttonManager != null ? buttonManager.Score : 0;
+    public event System.Action<Vector2> DynamiteCaptured
     {
-        get
-        {
-            int count = 0;
-            foreach (GameObject button in buttons.Keys)
-            {
-                if (button != null) count++;
-            }
-            return count;
-        }
+        add { if (buttonManager != null) buttonManager.DynamiteCaptured += value; }
+        remove { if (buttonManager != null) buttonManager.DynamiteCaptured -= value; }
     }
+
+    public int AliveButtonCount => buttonManager != null ? buttonManager.AliveButtonCount : 0;
 
     public int AliveButtonCountOf(string typeId)
     {
-        int count = 0;
-        foreach (KeyValuePair<GameObject, ButtonCollector> entry in buttons)
-        {
-            if (entry.Key == null || entry.Value == null) continue;
-            if (entry.Value.ButtonTypeId == typeId) count++;
-        }
-        return count;
+        return buttonManager != null ? buttonManager.AliveButtonCountOf(typeId) : 0;
     }
 
     public class NeedleData
     {
         public Transform needleTransform;
         public int health = MaxNeedleHealth;
+    }
+
+    private void Awake()
+    {
+        buttonManager = GetComponent<SewingButtonManager>();
+        if (buttonManager == null)
+        {
+            Debug.LogError("SewingButtonManager must be added and configured on the Sewing GameObject.", this);
+            return;
+        }
+        buttonManager.Initialize(this);
     }
 
     void Start()
@@ -217,10 +199,13 @@ public class Sewing : MonoBehaviour
             previousMouseWorldPos,
             worldMousePos,
             out _);
-        ProcessButtonCollection(
-            previousMouseWorldPos,
-            worldMousePos,
-            threadCrossingStarted);
+        if (buttonManager != null)
+        {
+            buttonManager.ProcessButtonCollection(
+                previousMouseWorldPos,
+                worldMousePos,
+                threadCrossingStarted);
+        }
         lastMouseWorldPos = worldMousePos;
         lastMovmentAngle = movementAngle;
     }
@@ -418,60 +403,6 @@ public class Sewing : MonoBehaviour
         return first.x * second.y - first.y * second.x;
     }
 
-    private void ProcessButtonCollection(
-        Vector2 previousNeedlePosition,
-        Vector2 currentNeedlePosition,
-        bool threadCrossingStarted)
-    {
-        if (buttons.Count == 0) return;
-
-        List<GameObject> buttonKeys = new List<GameObject>(buttons.Keys);
-        for (int i = 0; i < buttonKeys.Count; i++)
-        {
-
-            GameObject button = buttonKeys[i];
-            if (button == null ||
-                !buttons.TryGetValue(button, out ButtonCollector collector) ||
-                collector == null)
-            {
-                buttons.Remove(button);
-                continue;
-            }
-
-            if (!collector.TryCollect(
-                    previousNeedlePosition,
-                    currentNeedlePosition,
-                    threadCrossingStarted,
-                    buttonDistanceThreshold))
-            {
-
-                continue;
-            }
-            bool dynamiteButton = collector.ButtonTypeId == "dynamite";
-            if (dynamiteButton)
-            {
-                DamageNeedle(1, Vector2.zero);
-                DynamiteCaptured?.Invoke(button.transform.position);
-            }
-            else if (collector.ButtonTypeId == "heart")
-            {
-                RestoreNeedleHealth(1);
-            }
-            else if (collector.ButtonTypeId == "strike")
-            {
-                // slowTime();
-                //bonusPoints = true;
-            }
-            buttons.Remove(button);
-            Destroy(button);
-            if (!dynamiteButton)
-            {
-                OnButtonCollected(collector.ScorePoints);
-            }
-            break;
-        }
-    }
-
     private void TriggerScreenShake()
     {
         Camera mainCamera = Camera.main;
@@ -500,13 +431,6 @@ public class Sewing : MonoBehaviour
         shakeCamera = null;
         cameraShakeOffset = Vector3.zero;
         cameraShakeTimer = 0f;
-    }
-
-    private void OnButtonCollected(int scorePoints)
-    {
-        buttonsCollected++;
-        score += scorePoints;
-        //GrowTail();
     }
 
     void GrowTail()
@@ -545,100 +469,17 @@ public class Sewing : MonoBehaviour
 
     public void SpawnRandomButton(Vector2 position)
     {
-        List<ButtonSpawnOption> availableOptions = new List<ButtonSpawnOption>();
-        float totalWeight = 0f;
-        int aliveCount = Mathf.Max(1, AliveButtonCount);
-
-        foreach (ButtonSpawnOption option in buttonTypes)
+        if (buttonManager != null)
         {
-            if (option == null || option.prefab == null || option.targetShare <= 0f) continue;
-
-            ButtonCollector collector = option.prefab.GetComponent<ButtonCollector>();
-            if (collector == null || string.IsNullOrWhiteSpace(collector.ButtonTypeId))
-            {
-                Debug.LogError($"Button prefab '{option.prefab.name}' needs a ButtonCollector with a type ID.", option.prefab);
-                continue;
-            }
-
-            float share = AliveButtonCountOf(collector.ButtonTypeId) / (float)aliveCount;
-            float weight = option.targetShare / (0.35f + share);
-            if (weight <= 0f) continue;
-            availableOptions.Add(option);
-            totalWeight += weight;
+            buttonManager.SpawnRandomButton(position);
         }
-
-        if (availableOptions.Count == 0)
-        {
-            Debug.LogError("No valid button prefabs are configured on Sewing.", this);
-            return;
-        }
-
-        float roll = Random.value * totalWeight;
-        foreach (ButtonSpawnOption option in availableOptions)
-        {
-            ButtonCollector collector = option.prefab.GetComponent<ButtonCollector>();
-            float share = AliveButtonCountOf(collector.ButtonTypeId) / (float)aliveCount;
-            roll -= option.targetShare / (0.35f + share);
-            if (roll <= 0f)
-            {
-                SpawnButton(position, option);
-                return;
-            }
-        }
-
-        SpawnButton(position, availableOptions[availableOptions.Count - 1]);
-    }
-
-    private void SpawnButton(Vector2 position, ButtonSpawnOption option)
-    {
-        if (option == null || option.prefab == null)
-        {
-            Debug.LogError("A button spawn option has no prefab assigned.", this);
-            return;
-        }
-
-        Transform parent = buttonParent != null ? buttonParent : transform;
-        GameObject newButton = Instantiate(option.prefab, position, Quaternion.identity, parent);
-        ButtonCollector collector = newButton.GetComponent<ButtonCollector>();
-        if (collector == null || string.IsNullOrWhiteSpace(collector.ButtonTypeId))
-        {
-            Debug.LogError($"Spawned button '{newButton.name}' needs a ButtonCollector with a type ID.", newButton);
-            Destroy(newButton);
-            return;
-        }
-
-        collector.Initialize();
-        MonoBehaviour[] components = newButton.GetComponents<MonoBehaviour>();
-        foreach (MonoBehaviour component in components)
-        {
-            if (component is IButtonSpawnInitializer initializer)
-            {
-                initializer.Initialize(this, GetNeedleTransform());
-            }
-        }
-
-        buttons.Add(newButton, collector);
     }
 
     public void DespawnButtonsBelow(float worldY)
     {
-        if (buttons == null || buttons.Count == 0) return;
-
-        List<GameObject> buttonKeys = new List<GameObject>(buttons.Keys);
-        for (int i = 0; i < buttonKeys.Count; i++)
+        if (buttonManager != null)
         {
-            GameObject button = buttonKeys[i];
-            if (button == null)
-            {
-                buttons.Remove(button);
-                continue;
-            }
-
-            if (button.transform.position.y < worldY)
-            {
-                buttons.Remove(button);
-                Destroy(button);
-            }
+            buttonManager.DespawnButtonsBelow(worldY);
         }
     }
 
@@ -684,7 +525,7 @@ public class Sewing : MonoBehaviour
         return needleSprite != null ? needleSprite.health : 0;
     }
 
-    private void RestoreNeedleHealth(int amount)
+    public void RestoreNeedleHealth(int amount)
     {
         if (needleSprite == null || needleSprite.health <= 0) return;
 
@@ -722,7 +563,7 @@ public class Sewing : MonoBehaviour
 
         if (needleSprite.health <= 0)
         {
-            Debug.Log("Needle broke! Buttons collected: " + buttonsCollected);
+            Debug.Log("Needle broke! Buttons collected: " + ButtonsCollected);
         }
     }
 
