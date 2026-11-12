@@ -16,15 +16,15 @@ public class Wall : MonoBehaviour
     [SerializeField] float clashPunchScale = 1.18f;
     [SerializeField] float clashPunchDuration = 0.12f;
 
-    private Sewing sewing;
+    private NeedleManager needleManager;
     private float lastHitTime = -999f;
     private SpriteRenderer spriteRenderer;
     private Vector3 baseScale;
     private float punchTimer;
 
-    public void Initialize(Sewing sewingRef, Vector2 size)
+    public void Initialize(NeedleManager needleManagerRef, Vector2 size)
     {
-        sewing = sewingRef;
+        needleManager = needleManagerRef;
         baseScale = new Vector3(size.x, size.y, 1f);
         transform.localScale = baseScale;
 
@@ -50,9 +50,9 @@ public class Wall : MonoBehaviour
     {
         UpdateClashPunch();
 
-        if (sewing == null || !sewing.IsNeedleAlive()) return;
+        if (needleManager == null || !needleManager.IsNeedleAlive()) return;
 
-        Transform needle = sewing.GetNeedleTransform();
+        Transform needle = needleManager.GetNeedleTransform();
         if (needle == null) return;
 
         Collider2D wallCollider = GetComponent<Collider2D>();
@@ -75,7 +75,7 @@ public class Wall : MonoBehaviour
             away = Vector2.up;
         }
 
-        sewing.DamageNeedle(damage, away * knockback);
+        needleManager.DamageNeedle(damage, away * knockback);
         PlayClash(needlePos);
     }
 

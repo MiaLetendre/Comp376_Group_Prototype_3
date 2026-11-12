@@ -9,7 +9,7 @@ public class SewingButtonManager : MonoBehaviour
     [SerializeField] private float buttonDistanceThreshold = 2f;
 
     private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
-    private Sewing sewing;
+    private NeedleManager needleManager;
     private int buttonsCollected;
     private int score;
 
@@ -30,16 +30,16 @@ public class SewingButtonManager : MonoBehaviour
         }
     }
 
-    public void Initialize(Sewing sewingOwner)
+    public void Initialize(NeedleManager needleManagerOwner)
     {
-        sewing = sewingOwner;
-        if (buttonParent == null && sewingOwner != null)
+        needleManager = needleManagerOwner;
+        if (buttonParent == null && needleManagerOwner != null)
         {
-            buttonParent = sewingOwner.transform;
+            buttonParent = needleManagerOwner.transform;
         }
     }
 
-    public int AliveButtonCountOf(string typeId)
+    public int GetAliveButtonCountByType(string typeId)
     {
         int count = 0;
         foreach (KeyValuePair<GameObject, ButtonCollector> entry in buttons)
@@ -81,17 +81,17 @@ public class SewingButtonManager : MonoBehaviour
             bool dynamiteButton = collector.ButtonTypeId == "dynamite";
             if (dynamiteButton)
             {
-                if (sewing != null)
+                if (needleManager != null)
                 {
-                    sewing.DamageNeedle(1, Vector2.zero);
+                    needleManager.DamageNeedle(1, Vector2.zero);
                 }
                 DynamiteCaptured?.Invoke(button.transform.position);
             }
             else if (collector.ButtonTypeId == "heart")
             {
-                if (sewing != null)
+                if (needleManager != null)
                 {
-                    sewing.RestoreNeedleHealth(1);
+                    needleManager.RestoreNeedleHealth(1);
                 }
             }
             else if (collector.ButtonTypeId == "strike")
@@ -133,7 +133,7 @@ public class SewingButtonManager : MonoBehaviour
                 continue;
             }
 
-            float share = AliveButtonCountOf(collector.ButtonTypeId) / (float)aliveCount;
+            float share = GetAliveButtonCountByType(collector.ButtonTypeId) / (float)aliveCount;
             float weight = option.targetShare / (0.35f + share);
             if (weight <= 0f) continue;
             availableOptions.Add(option);
@@ -150,7 +150,7 @@ public class SewingButtonManager : MonoBehaviour
         foreach (ButtonSpawnOption option in availableOptions)
         {
             ButtonCollector collector = option.prefab.GetComponent<ButtonCollector>();
-            float share = AliveButtonCountOf(collector.ButtonTypeId) / (float)aliveCount;
+            float share = GetAliveButtonCountByType(collector.ButtonTypeId) / (float)aliveCount;
             roll -= option.targetShare / (0.35f + share);
             if (roll <= 0f)
             {
@@ -170,7 +170,7 @@ public class SewingButtonManager : MonoBehaviour
             return;
         }
 
-        Transform parent = buttonParent != null ? buttonParent : sewing != null ? sewing.transform : transform;
+        Transform parent = buttonParent != null ? buttonParent : needleManager != null ? needleManager.transform : transform;
         GameObject newButton = Instantiate(option.prefab, position, Quaternion.identity, parent);
         ButtonCollector collector = newButton.GetComponent<ButtonCollector>();
         if (collector == null || string.IsNullOrWhiteSpace(collector.ButtonTypeId))
@@ -186,7 +186,7 @@ public class SewingButtonManager : MonoBehaviour
         {
             if (component is IButtonSpawnInitializer initializer)
             {
-                initializer.Initialize(sewing, sewing != null ? sewing.GetNeedleTransform() : null);
+                initializer.Initialize(needleManager, needleManager != null ? needleManager.GetNeedleTransform() : null);
             }
         }
 

@@ -5,8 +5,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// COMP376 KD polish: a quick visual tutorial and a simple pause/main menu.
-/// Auto-installs at runtime in scenes that contain Mia's Sewing component.
-/// Does not change Sewing.cs, its prefab references, or the scene YAML.
+/// Auto-installs at runtime in scenes that contain the needle manager.
 ///
 /// GDD checklist:
 ///  - Quick tutorial to show how to kill buttons
@@ -24,14 +23,14 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private static bool skipTutorialOnNextScene;
     private static bool showTutorialOnNextScene;
 
-    private Sewing sewing;
+    private NeedleManager needleManager;
     private HealthDisplay healthDisplay;
     private LineRenderer threadLine;
     private Page page = Page.Playing;
     private Page helpReturn = Page.Pause;
-    // The needle is created in Sewing.Start. Until that has happened, it looks dead.
+    // The view initializes the needle in Start. Until then, it looks dead.
     private bool watchForDeath;
-    private bool wasSewingEnabled;
+    private bool wasNeedleManagerEnabled;
     private float previousTimeScale = 1f;
     private CanvasGroup tutorialCanvasGroup;
     private GUIStyle headingStyle;
@@ -47,7 +46,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
     {
-        if (FindFirstObjectByType<Sewing>() == null) return;
+        if (FindFirstObjectByType<NeedleManager>() == null) return;
         if (FindFirstObjectByType<KDSewingPolishUI>() != null) return;
         new GameObject("KD Sewing - Tutorial & Menu").AddComponent<KDSewingPolishUI>();
     }
@@ -92,14 +91,14 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         // Restores the time scale if a restart happened from the pause menu.
         watchForDeath = false;
         if (page != Page.Playing) UnfreezeGame();
-        sewing = FindFirstObjectByType<Sewing>();
-        threadLine = sewing != null ? sewing.GetComponent<LineRenderer>() : null;
+        needleManager = FindFirstObjectByType<NeedleManager>();
+        threadLine = needleManager != null ? needleManager.GetComponent<LineRenderer>() : null;
 
         // Every fresh round begins with a concise explanation of the controls.
         bool showTutorial = showTutorialOnNextScene || !skipTutorialOnNextScene;
         skipTutorialOnNextScene = false;
         showTutorialOnNextScene = false;
-        if (sewing != null && showTutorial)
+        if (needleManager != null && showTutorial)
         {
             ShowOverlay(Page.Tutorial);
             SetTutorialPanelVisible(true);
@@ -117,15 +116,15 @@ public sealed class KDSewingPolishUI : MonoBehaviour
 
     private void Update()
     {
-        if (sewing == null) return;
+        if (needleManager == null) return;
 
         if (page == Page.Playing)
         {
             if (!watchForDeath)
             {
-                watchForDeath = sewing.GetNeedleTransform() != null;
+                watchForDeath = needleManager.GetNeedleTransform() != null;
             }
-            else if (!sewing.IsNeedleAlive())
+            else if (!needleManager.IsNeedleAlive())
             {
                 SetTutorialPanelVisible(false);
                 ShowOverlay(Page.Death);
@@ -172,8 +171,8 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         if (page == Page.Playing)
         {
             previousTimeScale = Time.timeScale;
-            wasSewingEnabled = sewing != null && sewing.enabled;
-            if (next != Page.Tutorial && sewing != null) sewing.enabled = false;
+            wasNeedleManagerEnabled = needleManager != null && needleManager.enabled;
+            if (next != Page.Tutorial && needleManager != null) needleManager.enabled = false;
             Time.timeScale = 0f;
             Cursor.visible = true;
         }
@@ -230,20 +229,20 @@ public sealed class KDSewingPolishUI : MonoBehaviour
 
     private void SetScoreDisplayVisible(bool visible)
     {
-        if (sewing == null)
+        if (needleManager == null)
             return;
 
-        KDScoreAndCollectionHUD scoreDisplay = sewing.GetComponent<KDScoreAndCollectionHUD>();
+        KDScoreAndCollectionHUD scoreDisplay = needleManager.GetComponent<KDScoreAndCollectionHUD>();
         if (scoreDisplay == null)
-            scoreDisplay = sewing.gameObject.AddComponent<KDScoreAndCollectionHUD>();
+            scoreDisplay = needleManager.gameObject.AddComponent<KDScoreAndCollectionHUD>();
 
         scoreDisplay.SetVisible(visible);
     }
 
     private void SetGameplayVisualsVisible(bool visible)
     {
-        if (threadLine == null && sewing != null)
-            threadLine = sewing.GetComponent<LineRenderer>();
+        if (threadLine == null && needleManager != null)
+            threadLine = needleManager.GetComponent<LineRenderer>();
 
         if (threadLine != null)
             threadLine.enabled = visible;
@@ -253,7 +252,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     {
         Time.timeScale = previousTimeScale;
         Cursor.visible = false;
-        if (sewing != null && wasSewingEnabled) sewing.enabled = true;
+        if (needleManager != null && wasNeedleManagerEnabled) needleManager.enabled = true;
         page = Page.Playing;
     }
 
@@ -286,7 +285,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (sewing == null) return;
+        if (needleManager == null) return;
         if (page == Page.Tutorial) return;
         if (!stylesReady) SetupStyles();
 

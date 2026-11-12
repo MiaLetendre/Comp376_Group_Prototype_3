@@ -1550,6 +1550,8 @@ GameObject:
   - component: {fileID: 1734386638}
   - component: {fileID: 1734386637}
   - component: {fileID: 1734386640}
+  - component: {fileID: 7183141592}
+  - component: {fileID: 7183141593}
   m_Layer: 0
   m_Name: SewingNeedle
   m_TagString: Untagged
@@ -1566,33 +1568,47 @@ MonoBehaviour:
   m_GameObject: {fileID: 1734386636}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d098c2752051af45b5ec61b1fce074c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Sewing
+  m_Script: {fileID: 11500000, guid: c1423521878b448aaac9a285fff50dca, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::NeedleManager
+--- !u!114 &7183141593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1734386636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92389d537dd74c70a8de65d0abf1248c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ScreenShake
+  duration: 0.35
+  magnitude: 0.18
+--- !u!114 &7183141592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1734386636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7812920fe6dc40e9ab24ec4be4e229f1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::NeedleView
   lineRenderer: {fileID: 1734386638}
   sewingPoint: {fileID: 704769705}
-  clothPoints:
-    serializedVersion: 2
-    m_Bits: 64
   tailNodes: 60
   tailSegmentLength: 0.3
   tailSegmentWidth: 0.05
-  spriteRotaionOffset: -90
+  spriteRotationOffset: -90
   needleTipNormalized: {x: 0.5, y: 1}
   needleTailNormalized: {x: 0.5, y: 0}
   directionSmoothingSamples: 20
   minimumDirectionMovementPixels: 2
-  needleSpriteOriginal: {fileID: 704769705}
-  maxTailNodes: 90
-  nodesGainedPerButton: 3
-  widthGainPerButton: 0.003
-  lengthGainPerButton: 0.008
-  maxTailSegmentWidth: 0.06
-  maxTailSegmentLength: 0.45
+  needleSprite: {fileID: 704769705}
   needleLerpRotation: 0.5
-  waitTimeStrike: 5
-  dynamiteScreenShakeDuration: 0.35
-  dynamiteScreenShakeMagnitude: 0.18
 --- !u!120 &1734386638
 LineRenderer:
   serializedVersion: 3
@@ -1730,7 +1746,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ee8ecb6a05b6b24894b11bee78b1e9b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SewingButtonManager
-  buttonParent: {fileID: 1226687759}
+  buttonParent: {fileID: 0}
   buttonTypes:
   - prefab: {fileID: 7479389638260734148, guid: c65ff33fa921ad24c9d0004135845c33, type: 3}
     targetShare: 0.4

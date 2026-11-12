@@ -14,7 +14,7 @@ public class DodgeButton : MonoBehaviour, IButtonSpawnInitializer
     private Vector2 wanderDirection;
     private float nextWanderTime;
 
-    public void Initialize(Sewing sewing, Transform needleTransform)
+    public void Initialize(NeedleManager needleManager, Transform needleTransform)
     {
         needle = needleTransform;
         cam = Camera.main;

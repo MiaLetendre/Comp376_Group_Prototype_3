@@ -14,16 +14,16 @@ public class RedButton : MonoBehaviour, IButtonSpawnInitializer
     [SerializeField] float clashPunchScale = 1.18f;
     [SerializeField] float clashPunchDuration = 0.12f;
 
-    private Sewing sewing;
+    private NeedleManager needleManager;
     private float lastHitTime = -999f;
     private SpriteRenderer spriteRenderer;
     private Color bodyColor = Color.red;
     private Vector3 baseScale;
     private float punchTimer;
 
-    public void Initialize(Sewing sewingRef, Transform needle)
+    public void Initialize(NeedleManager needleManagerRef, Transform needle)
     {
-        sewing = sewingRef;
+        needleManager = needleManagerRef;
         CacheVisuals();
         FitBodyCollider();
     }
@@ -36,9 +36,9 @@ public class RedButton : MonoBehaviour, IButtonSpawnInitializer
 
     private void Start()
     {
-        if (sewing == null)
+        if (needleManager == null)
         {
-            sewing = FindFirstObjectByType<Sewing>();
+            needleManager = FindFirstObjectByType<NeedleManager>();
         }
     }
 
@@ -46,12 +46,12 @@ public class RedButton : MonoBehaviour, IButtonSpawnInitializer
     {
         UpdateClashPunch();
 
-        if (sewing == null || !sewing.IsNeedleAlive()) return;
+        if (needleManager == null || !needleManager.IsNeedleAlive()) return;
 
         Collider2D body = GetComponent<Collider2D>();
         if (body == null) return;
 
-        Vector2 head = sewing.GetNeedleHeadPosition();
+        Vector2 head = needleManager.GetNeedleHeadPosition();
         if (body.OverlapPoint(head))
         {
             TryHitNeedle(head);
@@ -69,7 +69,7 @@ public class RedButton : MonoBehaviour, IButtonSpawnInitializer
             away = Vector2.up;
         }
 
-        sewing.DamageNeedle(damage, away.normalized * knockback);
+        needleManager.DamageNeedle(damage, away.normalized * knockback);
         PlayClash(headPos);
     }
 

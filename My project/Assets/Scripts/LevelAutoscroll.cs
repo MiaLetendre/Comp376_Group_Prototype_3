@@ -37,7 +37,8 @@ public class LevelAutoscroll : MonoBehaviour
     private const float ButtonClearance = 0.6f;
     private const float HorizontalPassGap = 2f;
 
-    private Sewing sewing;
+    private NeedleManager needleManager;
+    private SewingButtonManager buttonManager;
     private Camera cam;
     private Transform contentRoot;
     private float aliveTime;
@@ -57,18 +58,23 @@ public class LevelAutoscroll : MonoBehaviour
 
     private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Sewing sewing = Object.FindFirstObjectByType<Sewing>();
-        if (sewing == null) return;
-        if (sewing.GetComponent<LevelAutoscroll>() != null) return;
-        sewing.gameObject.AddComponent<LevelAutoscroll>();
+        NeedleManager needleManager = Object.FindFirstObjectByType<NeedleManager>();
+        if (needleManager == null) return;
+        if (needleManager.GetComponent<LevelAutoscroll>() != null) return;
+        needleManager.gameObject.AddComponent<LevelAutoscroll>();
     }
 
     private void Awake()
     {
-        sewing = GetComponent<Sewing>();
-        if (sewing == null)
+        needleManager = GetComponent<NeedleManager>();
+        if (needleManager == null)
         {
-            sewing = FindFirstObjectByType<Sewing>();
+            needleManager = FindFirstObjectByType<NeedleManager>();
+        }
+
+        if (needleManager != null)
+        {
+            buttonManager = needleManager.GetComponent<SewingButtonManager>();
         }
 
         cam = Camera.main;
@@ -83,8 +89,8 @@ public class LevelAutoscroll : MonoBehaviour
 
     private void Update()
     {
-        if (sewing == null || cam == null) return;
-        if (!sewing.IsNeedleAlive()) return;
+        if (needleManager == null || cam == null) return;
+        if (!needleManager.IsNeedleAlive()) return;
 
         aliveTime += Time.deltaTime;
         cam.transform.position += new Vector3(0f, ScrollSpeed() * Time.deltaTime, 0f);
@@ -136,6 +142,8 @@ public class LevelAutoscroll : MonoBehaviour
 
     private void TrySpawnButton()
     {
+        if (buttonManager == null) return;
+
         float difficulty = Difficulty();
         int target = TargetAliveButtons(difficulty);
         float lowestUseful = cam.transform.position.y - cam.orthographicSize + 1f;
@@ -145,9 +153,9 @@ public class LevelAutoscroll : MonoBehaviour
         }
 
         int spawnedThisFrame = 0;
-        while (sewing.AliveButtonCount < target && spawnedThisFrame < 3)
+        while (needleManager.AliveButtonCount < target && spawnedThisFrame < 3)
         {
-            int before = sewing.AliveButtonCount;
+            int before = needleManager.AliveButtonCount;
             if (!TrySpawnButtonGroup(difficulty, target - before)) break;
             spawnedThisFrame++;
         }
@@ -189,7 +197,7 @@ public class LevelAutoscroll : MonoBehaviour
     private void SpawnButtonAt(float offsetX, float y)
     {
         Vector2 spawnPos = new Vector2(cam.transform.position.x + offsetX, y);
-        sewing.SpawnRandomButton(spawnPos);
+        buttonManager.SpawnRandomButton(spawnPos);
         spawnedButtonPositions.Add(spawnPos);
     }
 
@@ -348,7 +356,7 @@ public class LevelAutoscroll : MonoBehaviour
         wallObj.transform.position = new Vector3(worldPos.x, worldPos.y, 0f);
         wallObj.AddComponent<BoxCollider2D>();
         Wall wall = wallObj.AddComponent<Wall>();
-        wall.Initialize(sewing, size);
+        wall.Initialize(needleManager, size);
         spawnedWalls.Add(wallObj);
     }
 
@@ -388,7 +396,10 @@ public class LevelAutoscroll : MonoBehaviour
     private void CleanupBehindCamera()
     {
         float cutoff = cam.transform.position.y - despawnBehindDistance;
-        sewing.DespawnButtonsBelow(cutoff);
+        if (buttonManager != null)
+        {
+            buttonManager.DespawnButtonsBelow(cutoff);
+        }
 
         for (int i = spawnedButtonPositions.Count - 1; i >= 0; i--)
         {

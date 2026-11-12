@@ -2,7 +2,7 @@ using UnityEngine;
 
 public interface IButtonSpawnInitializer
 {
-    void Initialize(Sewing sewing, Transform needle);
+    void Initialize(NeedleManager needleManager, Transform needle);
 }
 
 public abstract class ButtonCollector : MonoBehaviour
