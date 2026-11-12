@@ -21,15 +21,19 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private const float ReferenceHeight = 540f;
 
     private static KDSewingPolishUI instance;
+    private static bool skipTutorialOnNextScene;
+    private static bool showTutorialOnNextScene;
 
     private Sewing sewing;
     private HealthDisplay healthDisplay;
+    private LineRenderer threadLine;
     private Page page = Page.Playing;
     private Page helpReturn = Page.Pause;
     // The needle is created in Sewing.Start. Until that has happened, it looks dead.
     private bool watchForDeath;
     private bool wasSewingEnabled;
     private float previousTimeScale = 1f;
+    private CanvasGroup tutorialCanvasGroup;
     private GUIStyle headingStyle;
     private GUIStyle subheadingStyle;
     private GUIStyle smallStyle;
@@ -64,6 +68,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private void Start()
     {
         SetTutorialPanelVisible(page == Page.Tutorial);
+        SetGameplayVisualsVisible(page != Page.Tutorial);
 
         if (startButton != null)
         {
@@ -88,15 +93,25 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         watchForDeath = false;
         if (page != Page.Playing) UnfreezeGame();
         sewing = FindFirstObjectByType<Sewing>();
+        threadLine = sewing != null ? sewing.GetComponent<LineRenderer>() : null;
 
         // Every fresh round begins with a concise explanation of the controls.
-        if (sewing != null)
+        bool showTutorial = showTutorialOnNextScene || !skipTutorialOnNextScene;
+        skipTutorialOnNextScene = false;
+        showTutorialOnNextScene = false;
+        if (sewing != null && showTutorial)
         {
             ShowOverlay(Page.Tutorial);
             SetTutorialPanelVisible(true);
+            SetScoreDisplayVisible(false);
+            Cursor.visible = true;
         } else {
+            Time.timeScale = 1f;
             page = Page.Playing;
             SetTutorialPanelVisible(false);
+            SetGameplayVisualsVisible(true);
+            SetHealthDisplayVisible(true);
+            SetScoreDisplayVisible(true);
         }
     }
 
@@ -106,8 +121,11 @@ public sealed class KDSewingPolishUI : MonoBehaviour
 
         if (page == Page.Playing)
         {
-            if (sewing.IsNeedleAlive()) watchForDeath = true;
-            else if (watchForDeath)
+            if (!watchForDeath)
+            {
+                watchForDeath = sewing.GetNeedleTransform() != null;
+            }
+            else if (!sewing.IsNeedleAlive())
             {
                 SetTutorialPanelVisible(false);
                 ShowOverlay(Page.Death);
@@ -122,6 +140,11 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         if (keys.escapeKey.wasPressedThisFrame)
         {
             if (page == Page.Playing) ShowOverlay(Page.Pause);
+            else if (page == Page.Tutorial)
+            {
+                SetTutorialPanelVisible(false);
+                page = helpReturn;
+            }
             else if (page == Page.Help) page = helpReturn;
             else if (page != Page.Death) Resume();
         }
@@ -137,24 +160,34 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         }
     }
 
+    private void LateUpdate()
+    {
+        Cursor.visible = page != Page.Playing;
+        if (page != Page.Playing)
+            Cursor.lockState = CursorLockMode.None;
+    }
+
     private void ShowOverlay(Page next)
     {
         if (page == Page.Playing)
         {
             previousTimeScale = Time.timeScale;
             wasSewingEnabled = sewing != null && sewing.enabled;
-            if (sewing != null) sewing.enabled = false;
+            if (next != Page.Tutorial && sewing != null) sewing.enabled = false;
             Time.timeScale = 0f;
             Cursor.visible = true;
-            //Cursor.lockState = CursorLockMode.None;
         }
+        if (next == Page.Tutorial)
+            SetGameplayVisualsVisible(false);
         page = next;
     }
 
     private void Resume()
     {
         SetTutorialPanelVisible(false);
+        SetGameplayVisualsVisible(true);
         SetHealthDisplayVisible(true);
+        SetScoreDisplayVisible(true);
         UnfreezeGame();
         page = Page.Playing;
     }
@@ -163,34 +196,79 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     {
         if (tutorialPanel != null)
         {
-            tutorialPanel.SetActive(visible);
+            if (tutorialPanel == gameObject)
+            {
+                if (tutorialCanvasGroup == null)
+                {
+                    tutorialCanvasGroup = tutorialPanel.GetComponent<CanvasGroup>();
+                    if (tutorialCanvasGroup == null)
+                    {
+                        tutorialCanvasGroup = tutorialPanel.AddComponent<CanvasGroup>();
+                    }
+                }
+
+                tutorialCanvasGroup.alpha = visible ? 1f : 0f;
+                tutorialCanvasGroup.interactable = visible;
+                tutorialCanvasGroup.blocksRaycasts = visible;
+                Cursor.visible = visible;
+            }
+            else
+            {
+                tutorialPanel.SetActive(visible);
+            }
         }
     }
 
     private void SetHealthDisplayVisible(bool visible)
     {
         if (healthDisplay == null)
-        {
             healthDisplay = FindFirstObjectByType<HealthDisplay>();
-        }
 
         if (healthDisplay != null)
-        {
             healthDisplay.SetVisible(visible);
-        }
+    }
+
+    private void SetScoreDisplayVisible(bool visible)
+    {
+        if (sewing == null)
+            return;
+
+        KDScoreAndCollectionHUD scoreDisplay = sewing.GetComponent<KDScoreAndCollectionHUD>();
+        if (scoreDisplay == null)
+            scoreDisplay = sewing.gameObject.AddComponent<KDScoreAndCollectionHUD>();
+
+        scoreDisplay.SetVisible(visible);
+    }
+
+    private void SetGameplayVisualsVisible(bool visible)
+    {
+        if (threadLine == null && sewing != null)
+            threadLine = sewing.GetComponent<LineRenderer>();
+
+        if (threadLine != null)
+            threadLine.enabled = visible;
     }
 
     private void UnfreezeGame()
     {
         Time.timeScale = previousTimeScale;
         Cursor.visible = false;
-        //Cursor.lockState = CursorLockMode.Locked;
         if (sewing != null && wasSewingEnabled) sewing.enabled = true;
         page = Page.Playing;
     }
 
     private void Restart()
     {
+        skipTutorialOnNextScene = true;
+        showTutorialOnNextScene = false;
+        UnfreezeGame();
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private void RestartWithTutorial()
+    {
+        skipTutorialOnNextScene = false;
+        showTutorialOnNextScene = true;
         UnfreezeGame();
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
@@ -240,7 +318,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         GUI.Label(new Rect(200, 144, 560, 35), "Game paused", subheadingStyle);
 
         if (Button(new Rect(333, 205, 294, 48), "Resume   [ESC]")) Resume();
-        if (Button(new Rect(333, 266, 294, 48), "How to Play")) OpenHelp(Page.Pause);
+        if (Button(new Rect(333, 266, 294, 48), "How to Play")) RestartWithTutorial();
         if (Button(new Rect(333, 327, 294, 48), "Restart")) Restart();
         if (Button(new Rect(333, 388, 294, 48), "Quit Game")) Quit();
     }
@@ -251,7 +329,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         GUI.Label(new Rect(200, 144, 560, 35), "you died", subheadingStyle);
 
         if (Button(new Rect(333, 220, 294, 48), "Restart")) Restart();
-        if (Button(new Rect(333, 281, 294, 48), "How to Play")) OpenHelp(Page.Death);
+        if (Button(new Rect(333, 281, 294, 48), "How to Play")) RestartWithTutorial();
         if (Button(new Rect(333, 342, 294, 48), "Quit Game")) Quit();
     }
 

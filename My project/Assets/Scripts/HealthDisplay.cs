@@ -57,7 +57,10 @@ public class HealthDisplay : MonoBehaviour
             return;
 
         for (int i = 0; i < hearts.Length; i++)
-            hearts[i].gameObject.SetActive(visible);
+        {
+            if (hearts[i] != null)
+                hearts[i].gameObject.SetActive(visible);
+        }
     }
 
     void Update()
@@ -79,7 +82,10 @@ public class HealthDisplay : MonoBehaviour
 
         int health = sewing.GetNeedleHealth();
         for (int i = 0; i < hearts.Length; i++)
-            hearts[i].color = i < health ? Color.white : new Color(0.35f, 0.35f, 0.35f, 0.4f);
+        {
+            if (hearts[i] != null)
+                hearts[i].color = i < health ? Color.white : new Color(0.35f, 0.35f, 0.35f, 0.4f);
+        }
     }
 
     Sprite PrepareSprite(Sprite source)

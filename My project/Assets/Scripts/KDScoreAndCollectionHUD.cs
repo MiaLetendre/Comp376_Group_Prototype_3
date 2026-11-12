@@ -29,6 +29,7 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
     private GUIStyle scoreStyle;
     private GUIStyle bestStyle;
     private GUIStyle pointsStyle;
+    private bool visible;
 
     // One HUD per Sewing controller. A scene restart creates a fresh HUD.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -53,6 +54,12 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
         previousCollected = sewing.ButtonsCollected;
         previousScore = sewing.Score;
         bestScore = Mathf.Max(0, PlayerPrefs.GetInt(BestScoreKey, 0));
+        visible = false;
+    }
+
+    public void SetVisible(bool isVisible)
+    {
+        visible = isVisible;
     }
 
     private void OnEnable()
@@ -77,7 +84,7 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
     // pickups that same frame, without relying on prefab names or scene setup.
     private void LateUpdate()
     {
-        if (sewing == null) return;
+        if (sewing == null || !visible) return;
 
         int score = sewing.Score;
         int collected = sewing.ButtonsCollected;
@@ -112,7 +119,7 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
 
     private void OnGUI()
     {
-        if (sewing == null || Time.timeScale <= 0f) return;
+        if (sewing == null || !visible) return;
 
         if (scoreStyle == null) CreateStyles();
 
