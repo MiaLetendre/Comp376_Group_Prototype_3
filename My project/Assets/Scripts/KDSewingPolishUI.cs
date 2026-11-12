@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// COMP376 KD polish: a quick visual tutorial and a simple pause/main menu.
@@ -22,21 +23,23 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private static KDSewingPolishUI instance;
 
     private Sewing sewing;
+    private HealthDisplay healthDisplay;
     private Page page = Page.Playing;
     private Page helpReturn = Page.Pause;
     // The needle is created in Sewing.Start. Until that has happened, it looks dead.
     private bool watchForDeath;
     private bool wasSewingEnabled;
     private float previousTimeScale = 1f;
-    private Texture2D circleTexture;
     private GUIStyle headingStyle;
     private GUIStyle subheadingStyle;
-    private GUIStyle bodyStyle;
     private GUIStyle smallStyle;
     private GUIStyle buttonStyle;
     private bool stylesReady;
 
-    // No scene edits or prefab hookup needed: detect the existing sewing game.
+    [Header("Tutorial UI Panel")]
+    [SerializeField] private GameObject tutorialPanel; // Drag your Tutorial Panel here in the Inspector
+    [SerializeField] private Button startButton;         // Drag your Start/Close button here
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
     {
@@ -54,10 +57,24 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         }
 
         instance = this;
-        DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
-        CreateCircleTexture();
         ConnectToCurrentScene();
+    }
+
+    private void Start()
+    {
+        SetTutorialPanelVisible(page == Page.Tutorial);
+
+        if (startButton != null)
+        {
+            startButton.onClick.AddListener(CloseTutorial);
+        }
+    }
+
+    public void CloseTutorial()
+    {
+        SetTutorialPanelVisible(false);
+        Resume();
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -73,8 +90,14 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         sewing = FindFirstObjectByType<Sewing>();
 
         // Every fresh round begins with a concise explanation of the controls.
-        if (sewing != null) ShowOverlay(Page.Tutorial);
-        else page = Page.Playing;
+        if (sewing != null)
+        {
+            ShowOverlay(Page.Tutorial);
+            SetTutorialPanelVisible(true);
+        } else {
+            page = Page.Playing;
+            SetTutorialPanelVisible(false);
+        }
     }
 
     private void Update()
@@ -86,7 +109,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
             if (sewing.IsNeedleAlive()) watchForDeath = true;
             else if (watchForDeath)
             {
-                
+                SetTutorialPanelVisible(false);
                 ShowOverlay(Page.Death);
 
                 return;
@@ -130,8 +153,31 @@ public sealed class KDSewingPolishUI : MonoBehaviour
 
     private void Resume()
     {
+        SetTutorialPanelVisible(false);
+        SetHealthDisplayVisible(true);
         UnfreezeGame();
         page = Page.Playing;
+    }
+
+    private void SetTutorialPanelVisible(bool visible)
+    {
+        if (tutorialPanel != null)
+        {
+            tutorialPanel.SetActive(visible);
+        }
+    }
+
+    private void SetHealthDisplayVisible(bool visible)
+    {
+        if (healthDisplay == null)
+        {
+            healthDisplay = FindFirstObjectByType<HealthDisplay>();
+        }
+
+        if (healthDisplay != null)
+        {
+            healthDisplay.SetVisible(visible);
+        }
     }
 
     private void UnfreezeGame()
@@ -163,6 +209,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private void OnGUI()
     {
         if (sewing == null) return;
+        if (page == Page.Tutorial) return;
         if (!stylesReady) SetupStyles();
 
         Matrix4x4 previousMatrix = GUI.matrix;
@@ -182,7 +229,6 @@ public sealed class KDSewingPolishUI : MonoBehaviour
 
             if (page == Page.Pause) DrawPause();
             else if (page == Page.Death) DrawDeath();
-            else DrawTutorial(page == Page.Tutorial);
         }
 
         GUI.matrix = previousMatrix;
@@ -215,81 +261,6 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         page = Page.Help;
     }
 
-    private void DrawTutorial(bool firstTime)
-    {
-        GUI.Label(new Rect(188, 88, 590, 55), "HOW TO SEW", headingStyle);
-        GUI.Label(new Rect(192, 153, 425, 32), "1   Move your mouse to steer the needle", bodyStyle);
-        GUI.Label(new Rect(192, 205, 425, 58), "2   Circle a button with the thread,\n     crossing the loop to collect it", bodyStyle);
-        GUI.Label(new Rect(192, 275, 425, 28), "3   Black: one wrap   Blue shield: two wraps", bodyStyle);
-        GUI.Label(new Rect(192, 305, 425, 28), "4   Green dodges you   Red damages the needle", bodyStyle);
-        GUI.Label(new Rect(192, 335, 425, 28), "5   Avoid brown walls while the level scrolls", bodyStyle);
-
-        DrawLoopDemo();
-        GUI.Label(new Rect(581, 366, 205, 30), "Loop around the button", smallStyle);
-
-        string label = firstTime ? "Start Sewing   [Enter]" : "Back to Menu   [ESC]";
-        if (Button(new Rect(323, 410, 314, 46), label))
-        {
-            if (firstTime) Resume();
-            else page = helpReturn;
-        }
-    }
-
-    private void DrawLoopDemo()
-    {
-        float cx = 674f;
-        float cy = 265f;
-        float radius = 67f;
-        Color old = GUI.color;
-
-        // A continuously drawn thread loop, using unscaled time so the demo
-        // continues animating while the gameplay is paused.
-        GUI.color = new Color(.83f, .71f, 1f, 1f);
-        float amount = Mathf.Repeat(Time.unscaledTime * .22f, 1f);
-        int totalSegments = 96;
-        int segments = Mathf.Max(1, Mathf.RoundToInt(totalSegments * amount));
-        //int totalSegments = 56;
-        Vector2 previous = new Vector2(cx + radius, cy);
-        //float startAngle = 0f;
-        //Vector2 previous = new Vector2(cx + Mathf.Cos(startAngle) * radius, cy + Mathf.Sin(startAngle) * radius);
-        // THIS HERE IS THE PROBLEM!!!
-        for (int i = 1; i <= segments; i++)
-        {
-            float angle = i * Mathf.PI * 2f / totalSegments;
-            Vector2 next = new Vector2(cx + Mathf.Cos(angle) * radius, cy + Mathf.Sin(angle) * radius);
-            DrawLine(previous, next, 4f);
-            previous = next;
-        }
-        
-
-        GUI.color = Color.white;
-        GUI.DrawTexture(new Rect(cx - 32, cy - 32, 64, 64), circleTexture);
-        GUI.color = new Color(.22f, .49f, .92f, 1f);
-        GUI.DrawTexture(new Rect(cx - 27, cy - 27, 54, 54), circleTexture);
-
-        float needleAngle = amount * Mathf.PI * 2f;
-        GUI.color = Color.white;
-        GUI.DrawTexture(new Rect(cx + Mathf.Cos(needleAngle) * radius - 7,
-                                cy + Mathf.Sin(needleAngle) * radius - 7,
-                                14, 14), circleTexture);
-        GUI.color = old;
-    }
-
-    private static void DrawLine(Vector2 from, Vector2 to, float thickness)
-    {
-        Vector2 delta = to - from;
-        if (delta.sqrMagnitude < .00001f) return;
-        Matrix4x4 saved = GUI.matrix;
-        
-        float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
-
-        //GUIUtility.RotateAroundPivot(0, from);
-        //ok so I fixed the issue with the GUI giant circle, by making it a solid line
-        GUI.matrix = saved * Matrix4x4.TRS(from, Quaternion.Euler(0, 0, angle), Vector3.one) * Matrix4x4.TRS(-from, Quaternion.identity, Vector3.one);
-        GUI.DrawTexture(new Rect(from.x, from.y - thickness / 2f, delta.magnitude, thickness), Texture2D.whiteTexture);
-        GUI.matrix = saved;
-    }
-
     private static void DrawRect(Rect rect, Color tint)
     {
         Color old = GUI.color;
@@ -318,13 +289,6 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         };
         subheadingStyle.normal.textColor = new Color(.77f, .79f, .88f);
 
-        bodyStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 18, alignment = TextAnchor.MiddleLeft,
-            wordWrap = true
-        };
-        bodyStyle.normal.textColor = Color.white;
-
         smallStyle = new GUIStyle(GUI.skin.label)
         {
             fontSize = 14, alignment = TextAnchor.MiddleCenter
@@ -339,33 +303,10 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         stylesReady = true;
     }
 
-    private void CreateCircleTexture()
-    {
-        const int size = 64;
-        circleTexture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-        circleTexture.name = "KD UI Circle (Runtime)";
-        circleTexture.hideFlags = HideFlags.HideAndDontSave;
-        Color32[] pixels = new Color32[size * size];
-        float radius = size * .5f - 1f;
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float distance = Vector2.Distance(new Vector2(x, y),
-                    new Vector2((size - 1f) * .5f, (size - 1f) * .5f));
-                byte alpha = (byte)Mathf.RoundToInt(Mathf.Clamp01(radius - distance) * 255f);
-                pixels[y * size + x] = new Color32(255, 255, 255, alpha);
-            }
-        }
-        circleTexture.SetPixels32(pixels);
-        circleTexture.Apply(false, true);
-    }
-
     private void OnDestroy()
     {
         if (instance == this) instance = null;
         SceneManager.sceneLoaded -= OnSceneLoaded;
         if (page != Page.Playing) UnfreezeGame();
-        if (circleTexture != null) Destroy(circleTexture);
     }
 }

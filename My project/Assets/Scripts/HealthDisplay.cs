@@ -18,6 +18,7 @@ public class HealthDisplay : MonoBehaviour
     Image[] hearts;
     Sewing sewing;
     bool needleReady;
+    bool visible;
     Sprite runtimeSprite;
     Texture2D runtimeTexture;
 
@@ -45,10 +46,25 @@ public class HealthDisplay : MonoBehaviour
             image.raycastTarget = false;
             hearts[i] = image;
         }
+
+        SetVisible(false);
+    }
+
+    public void SetVisible(bool isVisible)
+    {
+        visible = isVisible;
+        if (hearts == null)
+            return;
+
+        for (int i = 0; i < hearts.Length; i++)
+            hearts[i].gameObject.SetActive(visible);
     }
 
     void Update()
     {
+        if (!visible)
+            return;
+
         if (sewing == null)
             sewing = FindFirstObjectByType<Sewing>();
         if (sewing == null || hearts == null)
