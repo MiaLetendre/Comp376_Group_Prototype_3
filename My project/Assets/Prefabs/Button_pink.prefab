@@ -105,9 +105,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7479389638260734148}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ca3a268aeb14847a0a0000000000003, type: 3}
+  m_Script: {fileID: 11500000, guid: ac1a3b15f0624a57b9e033c24c66c4e8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StrikeButtonCollector
+  m_EditorClassIdentifier: Assembly-CSharp::HeartButtonCollector
   buttonType: 5
   scorePoints: 0
   spawnWeight: 10

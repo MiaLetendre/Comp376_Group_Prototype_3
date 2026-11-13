@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8123456789012345602}
   - component: {fileID: 8123456789012345603}
-  - component: {fileID: 8123456789012345604}
   - component: {fileID: 6000000000000000102}
   m_Layer: 5
   m_Name: Button_red
@@ -97,24 +96,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &8123456789012345604
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8123456789012345601}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f3a8c1d74e2b4a9f8d6c0e5b1a7f3d92, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RedButton
-  damage: 1
-  knockback: 1.25
-  damageCooldown: 0.75
-  clashColor: {r: 1, g: 0.85, b: 0.35, a: 1}
-  clashPunchScale: 1.18
-  clashPunchDuration: 0.12
 --- !u!114 &6000000000000000102
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -124,10 +105,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 8123456789012345601}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ca3a268aeb14847a0a0000000000002, type: 3}
+  m_Script: {fileID: 11500000, guid: bc46a312b6ff496288fd8f2f47de8a11, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WrapButtonCollector
+  m_EditorClassIdentifier: Assembly-CSharp::AttackerButtonCollector
   buttonType: 7
   scorePoints: 15
   spawnWeight: 18
   wrapsRequired: 1
+  damage: 1
+  knockback: 1.25
+  damageCooldown: 0.75
+  clashColor: {r: 1, g: 0.85, b: 0.35, a: 1}
+  clashPunchScale: 1.18
+  clashPunchDuration: 0.12

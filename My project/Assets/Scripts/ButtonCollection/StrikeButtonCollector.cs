@@ -20,7 +20,7 @@ public class StrikeButtonCollector : ButtonCollector
     private Vector3 pulseStartScale;
     private float strikeScaleElapsed = -1f;
 
-    private void Awake()
+    protected virtual void Awake()
     {
         originalScale = transform.localScale;
 
@@ -41,7 +41,7 @@ public class StrikeButtonCollector : ButtonCollector
         }
     }
 
-    private void Update()
+    protected override void OnButtonUpdate()
     {
         ApplyStrikeEffect();
     }

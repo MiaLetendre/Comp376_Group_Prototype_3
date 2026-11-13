@@ -21,6 +21,11 @@ public class ButtonManager : MonoBehaviour
     public int Score => score;
     public event System.Action<Vector2> DynamiteCaptured;
 
+    public void NotifyDynamiteCaptured(Vector2 position)
+    {
+        DynamiteCaptured?.Invoke(position);
+    }
+
     public int ActiveButtonCount
     {
         get
@@ -76,30 +81,11 @@ public class ButtonManager : MonoBehaviour
                 continue;
             }
 
-            bool dynamiteButton = collector.Type == ButtonType.Dynamite;
-            if (dynamiteButton)
-            {
-                if (needleManager != null)
-                {
-                    needleManager.DamageNeedle(1, Vector2.zero);
-                }
-                DynamiteCaptured?.Invoke(button.transform.position);
-            }
-            else if (collector.Type == ButtonType.Heart)
-            {
-                if (needleManager != null)
-                {
-                    needleManager.RestoreNeedleHealth(1);
-                }
-            }
-            else if (collector.Type == ButtonType.Strike)
-            {
-                // slowTime();
-                //bonusPoints = true;
-            }
+            collector.OnCollected(this);
+            bool countsAsCollected = collector.CountsAsCollected;
 
             RemoveAndDestroyButton(button);
-            if (!dynamiteButton)
+            if (countsAsCollected)
             {
                 OnButtonCollected(collector.ScorePoints);
             }
@@ -220,15 +206,7 @@ public class ButtonManager : MonoBehaviour
             return;
         }
 
-        collector.Initialize();
-        MonoBehaviour[] components = newButton.GetComponents<MonoBehaviour>();
-        foreach (MonoBehaviour component in components)
-        {
-            if (component is IButtonSpawnInitializer initializer)
-            {
-                initializer.Initialize(needleManager, needleManager != null ? needleManager.GetNeedleTransform() : null);
-            }
-        }
+        collector.Initialize(needleManager, needleManager != null ? needleManager.GetNeedleTransform() : null);
 
         buttons.Add(newButton, collector);
         activeButtonCountsByType[collector.Type] = GetActiveButtonCountByType(collector.Type) + 1;

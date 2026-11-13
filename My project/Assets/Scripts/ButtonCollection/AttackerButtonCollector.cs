@@ -1,81 +1,62 @@
 using UnityEngine;
 
-/// <summary>
-/// Red button. Sewn and collected like any other button, but the needle
-/// tip overlapping the button body damages the player the same way a wall does.
-/// </summary>
 [DisallowMultipleComponent]
-public class RedButton : MonoBehaviour, IButtonSpawnInitializer
+public class AttackerButtonCollector : WrapButtonCollector
 {
-    [SerializeField] int damage = 1;
-    [SerializeField] float knockback = 1.25f;
-    [SerializeField] float damageCooldown = 0.75f;
-    [SerializeField] Color clashColor = new Color(1f, 0.85f, 0.35f, 1f);
-    [SerializeField] float clashPunchScale = 1.18f;
-    [SerializeField] float clashPunchDuration = 0.12f;
+    [SerializeField] private int damage = 1;
+    [SerializeField] private float knockback = 1.25f;
+    [SerializeField] private float damageCooldown = 0.75f;
+    [SerializeField] private Color clashColor = new Color(1f, 0.85f, 0.35f, 1f);
+    [SerializeField] private float clashPunchScale = 1.18f;
+    [SerializeField] private float clashPunchDuration = 0.12f;
 
-    private NeedleManager needleManager;
     private float lastHitTime = -999f;
     private SpriteRenderer spriteRenderer;
     private Color bodyColor = Color.red;
     private Vector3 baseScale;
     private float punchTimer;
+    private Collider2D bodyCollider;
 
-    public void Initialize(NeedleManager needleManagerRef, Transform needle)
-    {
-        needleManager = needleManagerRef;
-        CacheVisuals();
-        FitBodyCollider();
-    }
-
-    private void Awake()
+    protected override void OnButtonSpawned()
     {
         CacheVisuals();
         FitBodyCollider();
     }
 
-    private void Start()
-    {
-        if (needleManager == null)
-        {
-            needleManager = FindFirstObjectByType<NeedleManager>();
-        }
-    }
-
-    private void Update()
+    protected override void OnButtonUpdate()
     {
         UpdateClashPunch();
 
-        if (needleManager == null || !needleManager.IsNeedleAlive()) return;
+        if (NeedleManager == null || !NeedleManager.IsNeedleAlive() || bodyCollider == null)
+        {
+            return;
+        }
 
-        Collider2D body = GetComponent<Collider2D>();
-        if (body == null) return;
-
-        Vector2 head = needleManager.GetNeedleHeadPosition();
-        if (body.OverlapPoint(head))
+        Vector2 head = NeedleManager.GetNeedleHeadPosition();
+        if (bodyCollider.OverlapPoint(head))
         {
             TryHitNeedle(head);
         }
     }
 
-    private void TryHitNeedle(Vector2 headPos)
+    private void TryHitNeedle(Vector2 headPosition)
     {
         if (Time.time - lastHitTime < damageCooldown) return;
         lastHitTime = Time.time;
 
-        Vector2 away = headPos - (Vector2)transform.position;
+        Vector2 away = headPosition - (Vector2)transform.position;
         if (away.sqrMagnitude < 0.001f)
         {
             away = Vector2.up;
         }
 
-        needleManager.DamageNeedle(damage, away.normalized * knockback);
-        PlayClash(headPos);
+        NeedleManager.DamageNeedle(damage, away.normalized * knockback);
+        PlayClash(headPosition);
     }
 
-    private void PlayClash(Vector2 hitPos)
+    private void PlayClash(Vector2 hitPosition)
     {
-        ClashEffect.Play(hitPos, clashColor);
+        ClashEffect.Play(hitPosition, clashColor);
         punchTimer = clashPunchDuration;
         if (spriteRenderer != null)
         {
@@ -88,13 +69,13 @@ public class RedButton : MonoBehaviour, IButtonSpawnInitializer
         if (punchTimer <= 0f) return;
 
         punchTimer -= Time.deltaTime;
-        float t = 1f - Mathf.Clamp01(punchTimer / clashPunchDuration);
-        float punch = Mathf.Sin((1f - t) * Mathf.PI);
+        float progress = 1f - Mathf.Clamp01(punchTimer / clashPunchDuration);
+        float punch = Mathf.Sin((1f - progress) * Mathf.PI);
         transform.localScale = baseScale * Mathf.Lerp(1f, clashPunchScale, punch);
 
         if (spriteRenderer != null)
         {
-            spriteRenderer.color = Color.Lerp(clashColor, bodyColor, t);
+            spriteRenderer.color = Color.Lerp(clashColor, bodyColor, progress);
         }
 
         if (punchTimer <= 0f)
@@ -134,12 +115,13 @@ public class RedButton : MonoBehaviour, IButtonSpawnInitializer
         }
 
         circle.isTrigger = true;
-
         if (spriteRenderer != null && spriteRenderer.sprite != null)
         {
             Vector3 extents = spriteRenderer.sprite.bounds.extents;
             circle.radius = Mathf.Min(extents.x, extents.y);
             circle.offset = spriteRenderer.sprite.bounds.center;
         }
+
+        bodyCollider = circle;
     }
 }
