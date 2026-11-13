@@ -108,6 +108,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ca3a268aeb14847a0a0000000000002, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WrapButtonCollector
-  buttonTypeId: shield
+  buttonType: 2
   scorePoints: 30
+  spawnWeight: 22
   wrapsRequired: 2

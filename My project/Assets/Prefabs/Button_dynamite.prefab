@@ -105,9 +105,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 7479389638260734148}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ca3a268aeb14847a0a0000000000002, type: 3}
+  m_Script: {fileID: 11500000, guid: caa20d0b4d0742c3a9df0091d223c10a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WrapButtonCollector
-  buttonTypeId: dynamite
+  m_EditorClassIdentifier: Assembly-CSharp::DynamiteButtonCollector
+  buttonType: 3
   scorePoints: 0
+  spawnWeight: 10
   wrapsRequired: 1

@@ -16,7 +16,7 @@ public class HealthDisplay : MonoBehaviour
     [SerializeField] Sprite heartSprite;
 
     Image[] hearts;
-    Sewing sewing;
+    NeedleManager needleManager;
     bool needleReady;
     bool visible;
     Sprite runtimeSprite;
@@ -68,19 +68,19 @@ public class HealthDisplay : MonoBehaviour
         if (!visible)
             return;
 
-        if (sewing == null)
-            sewing = FindFirstObjectByType<Sewing>();
-        if (sewing == null || hearts == null)
+        if (needleManager == null)
+            needleManager = FindFirstObjectByType<NeedleManager>();
+        if (needleManager == null || hearts == null)
             return;
 
         if (!needleReady)
         {
-            if (sewing.GetNeedleTransform() == null)
+            if (needleManager.GetNeedleTransform() == null)
                 return;
             needleReady = true;
         }
 
-        int health = sewing.GetNeedleHealth();
+        int health = needleManager.GetNeedleHealth();
         for (int i = 0; i < hearts.Length; i++)
         {
             if (hearts[i] != null)

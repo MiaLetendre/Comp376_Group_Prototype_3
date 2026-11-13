@@ -2,15 +2,15 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// COMP376 Iteration 1 (KD): current score, persistent best score, and a small
-/// animated feedback burst when the existing Sewing system collects a button.
+/// COMP376 Iteration 1 (KD): current score, session best score, and a small
+/// animated feedback burst when the needle system collects a button.
 /// Auto-installs without modifying scenes, prefabs, or teammates' scripts.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class KDScoreAndCollectionHUD : MonoBehaviour
 {
-    private const string BestScoreKey = "COMP376_Sewing_KD_BestScore_v1";
     private const float FeedbackDuration = 0.55f;
+    private static int sessionBestScore;
 
     private sealed class Feedback
     {
@@ -21,21 +21,27 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
     }
 
     private readonly List<Feedback> feedback = new List<Feedback>();
-    private Sewing sewing;
+    private NeedleManager needleManager;
     private int previousCollected;
     private int previousScore;
-    private int bestScore;
-    private bool bestScoreDirty;
     private GUIStyle scoreStyle;
     private GUIStyle bestStyle;
     private GUIStyle pointsStyle;
     private bool visible;
 
-    // One HUD per Sewing controller. A scene restart creates a fresh HUD.
+    public int CurrentScore => needleManager != null ? needleManager.Score : 0;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSessionBestScore()
+    {
+        sessionBestScore = 0;
+    }
+
+    // One HUD per needle manager. A scene restart creates a fresh HUD.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Install()
     {
-        Sewing controller = Object.FindFirstObjectByType<Sewing>();
+        NeedleManager controller = Object.FindFirstObjectByType<NeedleManager>();
         if (controller == null || controller.GetComponent<KDScoreAndCollectionHUD>() != null)
             return;
 
@@ -44,16 +50,15 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
 
     private void Awake()
     {
-        sewing = GetComponent<Sewing>();
-        if (sewing == null)
+        needleManager = GetComponent<NeedleManager>();
+        if (needleManager == null)
         {
             enabled = false;
             return;
         }
 
-        previousCollected = sewing.ButtonsCollected;
-        previousScore = sewing.Score;
-        bestScore = Mathf.Max(0, PlayerPrefs.GetInt(BestScoreKey, 0));
+        previousCollected = needleManager.ButtonsCollected;
+        previousScore = needleManager.Score;
         visible = false;
     }
 
@@ -62,11 +67,17 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
         visible = isVisible;
     }
 
+    public int GetBestScore()
+    {
+        sessionBestScore = Mathf.Max(sessionBestScore, CurrentScore);
+        return sessionBestScore;
+    }
+
     private void OnEnable()
     {
-        if (sewing != null)
+        if (needleManager != null)
         {
-            sewing.DynamiteCaptured += ShowDynamiteFeedback;
+            needleManager.OnDynamiteCaptured += ShowDynamiteFeedback;
         }
     }
 
@@ -80,20 +91,20 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
         });
     }
 
-    // Sewing collects buttons in Update(). LateUpdate() detects confirmed
+    // NeedleManager collects buttons in Update(). LateUpdate() detects confirmed
     // pickups that same frame, without relying on prefab names or scene setup.
     private void LateUpdate()
     {
-        if (sewing == null || !visible) return;
+        if (needleManager == null || !visible) return;
 
-        int score = sewing.Score;
-        int collected = sewing.ButtonsCollected;
+        int score = needleManager.Score;
+        int collected = needleManager.ButtonsCollected;
 
         if (collected > previousCollected)
         {
             feedback.Add(new Feedback
             {
-                worldPosition = sewing.GetNeedleHeadPosition(),
+                worldPosition = needleManager.GetNeedleHeadPosition(),
                 points = Mathf.Max(0, score - previousScore),
                 age = 0f
             });
@@ -102,12 +113,7 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
         previousCollected = collected;
         previousScore = score;
 
-        if (score > bestScore)
-        {
-            bestScore = score;
-            PlayerPrefs.SetInt(BestScoreKey, bestScore);
-            bestScoreDirty = true;
-        }
+        GetBestScore();
 
         for (int i = feedback.Count - 1; i >= 0; i--)
         {
@@ -119,7 +125,7 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
 
     private void OnGUI()
     {
-        if (sewing == null || !visible) return;
+        if (needleManager == null || !visible) return;
 
         if (scoreStyle == null) CreateStyles();
 
@@ -142,9 +148,9 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
 
         GUI.color = Color.white;
         GUI.Label(new Rect(panelX, panelY + 3f * scale, panelWidth, 36f * scale),
-            "SCORE  " + sewing.Score, scoreStyle);
+            "SCORE  " + needleManager.Score, scoreStyle);
         GUI.Label(new Rect(panelX, panelY + 37f * scale, panelWidth, 24f * scale),
-            "BEST  " + bestScore, bestStyle);
+            "BEST  " + sessionBestScore, bestStyle);
 
         DrawCollectionFeedback(scale);
 
@@ -218,27 +224,11 @@ public sealed class KDScoreAndCollectionHUD : MonoBehaviour
         pointsStyle.normal.textColor = new Color(1f, 0.93f, 0.64f);
     }
 
-    // Avoid forcing a disk save on every collected button. Save on scene exit,
-    // application quit, or suspension; Unity also persists PlayerPrefs on quit.
-    private void SaveBestScore()
-    {
-        if (!bestScoreDirty) return;
-        PlayerPrefs.Save();
-        bestScoreDirty = false;
-    }
-
     private void OnDisable()
     {
-        if (sewing != null)
+        if (needleManager != null)
         {
-            sewing.DynamiteCaptured -= ShowDynamiteFeedback;
+            needleManager.OnDynamiteCaptured -= ShowDynamiteFeedback;
         }
-
-        SaveBestScore();
-    }
-    private void OnApplicationQuit() { SaveBestScore(); }
-    private void OnApplicationPause(bool paused)
-    {
-        if (paused) SaveBestScore();
     }
 }
