@@ -2157,6 +2157,8 @@ MonoBehaviour:
   tutorialPage: {fileID: 89495560}
   pausePage: {fileID: 1753878599}
   deathPage: {fileID: 103469462}
+  deathScoreText: {fileID: 1959398359}
+  deathHighScoreText: {fileID: 388954532}
 --- !u!1 &1032936970
 GameObject:
   m_ObjectHideFlags: 0

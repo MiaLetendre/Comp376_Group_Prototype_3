@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 [DisallowMultipleComponent]
 public sealed class KDSewingPolishUI : MonoBehaviour
@@ -13,6 +14,8 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     [SerializeField] private GameObject tutorialPage;
     [SerializeField] private GameObject pausePage;
     [SerializeField] private GameObject deathPage;
+    [SerializeField] private TMP_Text deathScoreText;
+    [SerializeField] private TMP_Text deathHighScoreText;
 
     private NeedleManager needleManager;
     private HealthDisplay healthDisplay;
@@ -123,6 +126,9 @@ public sealed class KDSewingPolishUI : MonoBehaviour
             SetScoreDisplayVisible(false);
         }
 
+        if (next == Page.Death)
+            UpdateDeathScoreDisplay();
+
         if (next == Page.Tutorial)
             SetGameplayVisualsVisible(false);
 
@@ -157,11 +163,27 @@ public sealed class KDSewingPolishUI : MonoBehaviour
         if (needleManager == null)
             return;
 
-        KDScoreAndCollectionHUD scoreDisplay = needleManager.GetComponent<KDScoreAndCollectionHUD>();
-        if (scoreDisplay == null)
-            scoreDisplay = needleManager.gameObject.AddComponent<KDScoreAndCollectionHUD>();
+        GetScoreDisplay().SetVisible(visible);
+    }
 
-        scoreDisplay.SetVisible(visible);
+    private void UpdateDeathScoreDisplay()
+    {
+        if (needleManager == null)
+            return;
+
+        KDScoreAndCollectionHUD scoreDisplay = GetScoreDisplay();
+        if (deathScoreText != null)
+            deathScoreText.text = $"Score: {scoreDisplay.CurrentScore}";
+        if (deathHighScoreText != null)
+            deathHighScoreText.text = $"High Score: {scoreDisplay.GetBestScore()}";
+    }
+
+    private KDScoreAndCollectionHUD GetScoreDisplay()
+    {
+        KDScoreAndCollectionHUD scoreDisplay = needleManager.GetComponent<KDScoreAndCollectionHUD>();
+        return scoreDisplay != null
+            ? scoreDisplay
+            : needleManager.gameObject.AddComponent<KDScoreAndCollectionHUD>();
     }
 
     private void SetGameplayVisualsVisible(bool visible)
