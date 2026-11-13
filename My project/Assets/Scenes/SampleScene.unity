@@ -278,7 +278,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 911708858}
-        m_TargetAssemblyTypeName: KDSewingPolishUI, Assembly-CSharp
+        m_TargetAssemblyTypeName: GameUIController, Assembly-CSharp
         m_MethodName: Resume
         m_Mode: 1
         m_Arguments:
@@ -1218,7 +1218,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 911708858}
-        m_TargetAssemblyTypeName: KDSewingPolishUI, Assembly-CSharp
+        m_TargetAssemblyTypeName: GameUIController, Assembly-CSharp
         m_MethodName: ShowTutorial
         m_Mode: 1
         m_Arguments:
@@ -1572,7 +1572,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 911708858}
-        m_TargetAssemblyTypeName: KDSewingPolishUI, Assembly-CSharp
+        m_TargetAssemblyTypeName: GameUIController, Assembly-CSharp
         m_MethodName: ShowTutorial
         m_Mode: 1
         m_Arguments:
@@ -1917,7 +1917,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 911708858}
-        m_TargetAssemblyTypeName: KDSewingPolishUI, Assembly-CSharp
+        m_TargetAssemblyTypeName: GameUIController, Assembly-CSharp
         m_MethodName: RestartWithTutorial
         m_Mode: 1
         m_Arguments:
@@ -2153,7 +2153,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 093fc66f66804408bd83c659bfdee49e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KDSewingPolishUI
+  m_EditorClassIdentifier: Assembly-CSharp::GameUIController
   tutorialPage: {fileID: 89495560}
   pausePage: {fileID: 1753878599}
   deathPage: {fileID: 103469462}
@@ -2530,7 +2530,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 911708858}
-        m_TargetAssemblyTypeName: KDSewingPolishUI, Assembly-CSharp
+        m_TargetAssemblyTypeName: GameUIController, Assembly-CSharp
         m_MethodName: RestartWithTutorial
         m_Mode: 1
         m_Arguments:
@@ -3336,7 +3336,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 911708858}
-        m_TargetAssemblyTypeName: KDSewingPolishUI, Assembly-CSharp
+        m_TargetAssemblyTypeName: GameUIController, Assembly-CSharp
         m_MethodName: CloseTutorial
         m_Mode: 1
         m_Arguments:

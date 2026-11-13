@@ -4,11 +4,11 @@ using UnityEngine.SceneManagement;
 using TMPro;
 
 [DisallowMultipleComponent]
-public sealed class KDSewingPolishUI : MonoBehaviour
+public sealed class GameUIController : MonoBehaviour
 {
     private enum Page { Playing, Tutorial, Pause, Death }
 
-    private static KDSewingPolishUI instance;
+    private static GameUIController instance;
 
     [Header("Pages")]
     [SerializeField] private GameObject tutorialPage;
