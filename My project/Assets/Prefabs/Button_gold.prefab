@@ -108,8 +108,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ca3a268aeb14847a0a0000000000003, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StrikeButtonCollector
-  buttonTypeId: strike
+  buttonType: 4
   scorePoints: 0
+  spawnWeight: 5
   strikesRequired: 3
   requiredBodyCoverage: 0.3
   strikeScaleMultiplier: 1.12

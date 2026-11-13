@@ -6,13 +6,13 @@ public class NeedleManager : MonoBehaviour
     private const int MaxNeedleHealth = 3;
 
     private NeedleView needleView;
-    private SewingButtonManager buttonManager;
+    private ButtonManager buttonManager;
     private int needleHealth = MaxNeedleHealth;
     private bool previousCursorVisibility;
     private Vector2 lastMouseWorldPosition;
     public int ButtonsCollected => buttonManager != null ? buttonManager.ButtonsCollected : 0;
     public int Score => buttonManager != null ? buttonManager.Score : 0;
-    public int AliveButtonCount => buttonManager != null ? buttonManager.AliveButtonCount : 0;
+    public int ActiveButtonCount => buttonManager != null ? buttonManager.ActiveButtonCount : 0;
     public event System.Action OnDamageTaken;
     public event System.Action<Vector2> OnDynamiteCaptured // forward the event from the button manager
     {
@@ -40,10 +40,10 @@ public class NeedleManager : MonoBehaviour
             Debug.LogError("NeedleView must be added to the NeedleManager GameObject.", this);
         }
 
-        buttonManager = GetComponent<SewingButtonManager>();
+        buttonManager = GetComponent<ButtonManager>();
         if (buttonManager == null)
         {
-            Debug.LogError("SewingButtonManager must be added and configured on the NeedleManager GameObject.", this);
+            Debug.LogError("ButtonManager must be added and configured on the NeedleManager GameObject.", this);
         }
         else
         {

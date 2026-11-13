@@ -15,8 +15,8 @@ public class LevelAutoscroll : MonoBehaviour
     [SerializeField] float despawnBehindDistance = 12f;
     [SerializeField] float minButtonGap = 1.05f;
     [SerializeField] float minWallGap = 1.15f;
-    [SerializeField] int easyAliveButtons = 6;
-    [SerializeField] int hardAliveButtons = 11;
+    [SerializeField] int easyActiveButtons = 6;
+    [SerializeField] int hardActiveButtons = 11;
     [SerializeField] float minLaneWidth = 3.5f;
 
     private const float SpeedNoiseFrequency = 0.12f;
@@ -38,7 +38,7 @@ public class LevelAutoscroll : MonoBehaviour
     private const float HorizontalPassGap = 2f;
 
     private NeedleManager needleManager;
-    private SewingButtonManager buttonManager;
+    private ButtonManager buttonManager;
     private Camera cam;
     private Transform contentRoot;
     private float aliveTime;
@@ -74,7 +74,7 @@ public class LevelAutoscroll : MonoBehaviour
 
         if (needleManager != null)
         {
-            buttonManager = needleManager.GetComponent<SewingButtonManager>();
+            buttonManager = needleManager.GetComponent<ButtonManager>();
         }
 
         cam = Camera.main;
@@ -135,9 +135,9 @@ public class LevelAutoscroll : MonoBehaviour
         openRight = center + laneHalf;
     }
 
-    private int TargetAliveButtons(float difficulty)
+    private int TargetActiveButtons(float difficulty)
     {
-        return Mathf.RoundToInt(Mathf.Lerp(easyAliveButtons, hardAliveButtons, difficulty));
+        return Mathf.RoundToInt(Mathf.Lerp(easyActiveButtons, hardActiveButtons, difficulty));
     }
 
     private void TrySpawnButton()
@@ -145,7 +145,7 @@ public class LevelAutoscroll : MonoBehaviour
         if (buttonManager == null) return;
 
         float difficulty = Difficulty();
-        int target = TargetAliveButtons(difficulty);
+        int target = TargetActiveButtons(difficulty);
         float lowestUseful = cam.transform.position.y - cam.orthographicSize + 1f;
         if (nextButtonSpawnY < lowestUseful)
         {
@@ -153,9 +153,9 @@ public class LevelAutoscroll : MonoBehaviour
         }
 
         int spawnedThisFrame = 0;
-        while (needleManager.AliveButtonCount < target && spawnedThisFrame < 3)
+        while (needleManager.ActiveButtonCount < target && spawnedThisFrame < 3)
         {
-            int before = needleManager.AliveButtonCount;
+            int before = needleManager.ActiveButtonCount;
             if (!TrySpawnButtonGroup(difficulty, target - before)) break;
             spawnedThisFrame++;
         }
