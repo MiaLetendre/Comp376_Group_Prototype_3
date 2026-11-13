@@ -8,7 +8,6 @@ public class NeedleManager : MonoBehaviour
     private NeedleView needleView;
     private ButtonManager buttonManager;
     private int needleHealth = MaxNeedleHealth;
-    private bool previousCursorVisibility;
     private Vector2 lastMouseWorldPosition;
     public int ButtonsCollected => buttonManager != null ? buttonManager.ButtonsCollected : 0;
     public int Score => buttonManager != null ? buttonManager.Score : 0;
@@ -53,9 +52,6 @@ public class NeedleManager : MonoBehaviour
 
     private void Start()
     {
-        previousCursorVisibility = Cursor.visible;
-        Cursor.visible = false;
-
         if (needleView == null)
         {
             return;
@@ -74,7 +70,6 @@ public class NeedleManager : MonoBehaviour
     {
         if (needleHealth <= 0)
         {
-            Cursor.visible = true;
             return;
         }
 
@@ -98,11 +93,6 @@ public class NeedleManager : MonoBehaviour
         }
 
         lastMouseWorldPosition = currentMouseWorldPosition;
-    }
-
-    private void OnDisable()
-    {
-        Cursor.visible = previousCursorVisibility;
     }
 
     private bool TryFindNeedleThreadCrossing(Vector2 previousHeadPosition, Vector2 currentHeadPosition)
