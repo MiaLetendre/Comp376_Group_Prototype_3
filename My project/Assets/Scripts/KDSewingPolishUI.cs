@@ -5,10 +5,9 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class KDSewingPolishUI : MonoBehaviour
 {
-    private enum Page { Playing, Tutorial, Pause, Help, Death }
+    private enum Page { Playing, Tutorial, Pause, Death }
 
     private static KDSewingPolishUI instance;
-    private static bool skipTutorialOnNextScene;
 
     [Header("Pages")]
     [SerializeField] private GameObject tutorialPage;
@@ -19,7 +18,6 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private HealthDisplay healthDisplay;
     private LineRenderer threadLine;
     private Page page = Page.Playing;
-    private Page helpReturn = Page.Pause;
     private Page tutorialReturn = Page.Playing;
     private bool watchForDeath;
     private bool wasNeedleManagerEnabled;
@@ -46,26 +44,14 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private void ConnectToCurrentScene()
     {
         watchForDeath = false;
-        if (page != Page.Playing) UnfreezeGame();
+        if (page != Page.Playing)
+            UnfreezeGame();
+        page = Page.Playing;
+
         needleManager = FindFirstObjectByType<NeedleManager>();
         threadLine = needleManager != null ? needleManager.GetComponent<LineRenderer>() : null;
 
-        bool showTutorial = !skipTutorialOnNextScene;
-        skipTutorialOnNextScene = false;
-
-        if (needleManager != null && showTutorial)
-        {
-            ShowOverlay(Page.Tutorial);
-        }
-        else
-        {
-            Time.timeScale = 1f;
-            page = Page.Playing;
-            SetGameplayVisualsVisible(true);
-            SetHealthDisplayVisible(true);
-            SetScoreDisplayVisible(true);
-            UpdatePageVisibility();
-        }
+        SetPage(needleManager != null ? Page.Tutorial : Page.Playing);
     }
 
     private void Update()
@@ -80,7 +66,7 @@ public sealed class KDSewingPolishUI : MonoBehaviour
             }
             else if (!needleManager.IsNeedleAlive())
             {
-                ShowOverlay(Page.Death);
+                SetPage(Page.Death);
                 return;
             }
         }
@@ -90,19 +76,14 @@ public sealed class KDSewingPolishUI : MonoBehaviour
 
         if (keys.escapeKey.wasPressedThisFrame)
         {
-            if (page == Page.Playing) ShowOverlay(Page.Pause);
+            if (page == Page.Playing) SetPage(Page.Pause);
             else if (page == Page.Tutorial) CloseTutorial();
-            else if (page == Page.Help) ReturnFromHelp();
             else if (page == Page.Pause) Resume();
         }
         else if (page == Page.Tutorial &&
                  (keys.enterKey.wasPressedThisFrame || keys.spaceKey.wasPressedThisFrame))
         {
             CloseTutorial();
-        }
-        else if (page == Page.Playing && keys.hKey.wasPressedThisFrame)
-        {
-            OpenHelpFromPlaying();
         }
     }
 
@@ -118,48 +99,40 @@ public sealed class KDSewingPolishUI : MonoBehaviour
             Cursor.lockState = CursorLockMode.None;
     }
 
-    private void ShowOverlay(Page next)
+    private void SetPage(Page next)
     {
-        if (page == Page.Playing)
+        if (next != Page.Playing && page == Page.Playing)
         {
             previousTimeScale = Time.timeScale;
             wasNeedleManagerEnabled = needleManager != null && needleManager.enabled;
             if (needleManager != null)
                 needleManager.enabled = false;
             Time.timeScale = 0f;
-            Cursor.visible = true;
+        }
+
+        if (next == Page.Playing)
+        {
+            SetGameplayVisualsVisible(true);
+            SetHealthDisplayVisible(true);
+            SetScoreDisplayVisible(true);
+            UnfreezeGame();
+        }
+        else
+        {
+            SetHealthDisplayVisible(false);
+            SetScoreDisplayVisible(false);
         }
 
         if (next == Page.Tutorial)
             SetGameplayVisualsVisible(false);
 
         page = next;
-        SetHealthDisplayVisible(false);
-        SetScoreDisplayVisible(false);
         UpdatePageVisibility();
-    }
-
-    private void ReturnFromHelp()
-    {
-        if (helpReturn == Page.Playing)
-        {
-            Resume();
-            return;
-        }
-
-        page = helpReturn;
-        UpdatePageVisibility();
-    }
-
-    private void OpenHelpFromPlaying()
-    {
-        helpReturn = Page.Playing;
-        ShowOverlay(Page.Help);
     }
 
     private void UpdatePageVisibility()
     {
-        SetPageActive(tutorialPage, page == Page.Tutorial || page == Page.Help);
+        SetPageActive(tutorialPage, page == Page.Tutorial);
         SetPageActive(pausePage, page == Page.Pause);
         SetPageActive(deathPage, page == Page.Death);
     }
@@ -203,70 +176,41 @@ public sealed class KDSewingPolishUI : MonoBehaviour
     private void UnfreezeGame()
     {
         Time.timeScale = previousTimeScale;
-        Cursor.visible = false;
         if (needleManager != null && wasNeedleManagerEnabled)
             needleManager.enabled = true;
-        page = Page.Playing;
     }
 
     public void CloseTutorial()
     {
-        if (page == Page.Help)
-        {
-            ReturnFromHelp();
+        if (page != Page.Tutorial)
             return;
-        }
 
-        if (tutorialReturn == Page.Playing)
-        {
-            Resume();
-            return;
-        }
-
-        page = tutorialReturn;
-        UpdatePageVisibility();
+        SetPage(tutorialReturn);
     }
 
     public void ShowTutorial()
     {
-        tutorialReturn = page;
-        if (page == Page.Playing)
-        {
-            ShowOverlay(Page.Tutorial);
+        if (page == Page.Tutorial)
             return;
-        }
 
-        page = Page.Tutorial;
-        UpdatePageVisibility();
+        tutorialReturn = page;
+        SetPage(Page.Tutorial);
     }
 
     public void Resume()
     {
-        SetGameplayVisualsVisible(true);
-        SetHealthDisplayVisible(true);
-        SetScoreDisplayVisible(true);
-        UnfreezeGame();
-        page = Page.Playing;
-        UpdatePageVisibility();
-    }
-
-    public void Restart()
-    {
-        skipTutorialOnNextScene = true;
-        UnfreezeGame();
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        SetPage(Page.Playing);
     }
 
     public void RestartWithTutorial()
     {
-        skipTutorialOnNextScene = false;
-        UnfreezeGame();
+        SetPage(Page.Playing);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void LoadMenu()
     {
-        UnfreezeGame();
+        SetPage(Page.Playing);
         SceneManager.LoadScene("Menu");
     }
 
