@@ -6,7 +6,7 @@ using TMPro;
 [DisallowMultipleComponent]
 public sealed class GameUIController : MonoBehaviour
 {
-    private enum Page { Playing, Tutorial, Pause, Death }
+    private enum Page { Playing, Tutorial, Pause, Death, HowToPlay }
 
     private static GameUIController instance;
 
@@ -14,14 +14,17 @@ public sealed class GameUIController : MonoBehaviour
     [SerializeField] private GameObject tutorialPage;
     [SerializeField] private GameObject pausePage;
     [SerializeField] private GameObject deathPage;
+    [SerializeField] private GameObject howToPlayPage;
     [SerializeField] private TMP_Text deathScoreText;
     [SerializeField] private TMP_Text deathHighScoreText;
+    
 
     private NeedleManager needleManager;
     private HealthDisplay healthDisplay;
     private LineRenderer threadLine;
     private Page page = Page.Playing;
     private Page tutorialReturn = Page.Playing;
+    private Page howToPlayReturn = Page.Playing;
     private bool watchForDeath;
     private bool wasNeedleManagerEnabled;
     private float previousTimeScale = 1f;
@@ -82,6 +85,7 @@ public sealed class GameUIController : MonoBehaviour
             if (page == Page.Playing) SetPage(Page.Pause);
             else if (page == Page.Tutorial) CloseTutorial();
             else if (page == Page.Pause) Resume();
+            else if (page == Page.HowToPlay) CloseHowToPlay();
         }
         else if (page == Page.Tutorial &&
                  (keys.enterKey.wasPressedThisFrame || keys.spaceKey.wasPressedThisFrame))
@@ -95,6 +99,7 @@ public sealed class GameUIController : MonoBehaviour
         bool anyPageActive =
             (tutorialPage != null && tutorialPage.activeInHierarchy) ||
             (pausePage != null && pausePage.activeInHierarchy) ||
+            (howToPlayPage != null && howToPlayPage.activeInHierarchy) ||
             (deathPage != null && deathPage.activeInHierarchy);
 
         Cursor.visible = anyPageActive;
@@ -140,6 +145,7 @@ public sealed class GameUIController : MonoBehaviour
     {
         SetPageActive(tutorialPage, page == Page.Tutorial);
         SetPageActive(pausePage, page == Page.Pause);
+        SetPageActive(howToPlayPage, page == Page.HowToPlay);
         SetPageActive(deathPage, page == Page.Death);
     }
 
@@ -207,7 +213,7 @@ public sealed class GameUIController : MonoBehaviour
         if (page != Page.Tutorial)
             return;
 
-        SetPage(tutorialReturn);
+        SetPage(Page.Playing);
     }
 
     public void ShowTutorial()
@@ -218,6 +224,30 @@ public sealed class GameUIController : MonoBehaviour
         tutorialReturn = page;
         SetPage(Page.Tutorial);
     }
+
+    //Begins Game
+    public void CloseHowToPlay()
+    {
+        if (page != Page.HowToPlay)
+            return;
+    
+        SetPage(Page.Playing);
+
+    }
+
+    public void ShowHowToPlay()
+    {
+        if (page == Page.HowToPlay)
+            return;
+
+        howToPlayReturn = page;
+        SetPage(Page.HowToPlay);
+
+    }
+
+    
+
+    
 
     public void Resume()
     {
