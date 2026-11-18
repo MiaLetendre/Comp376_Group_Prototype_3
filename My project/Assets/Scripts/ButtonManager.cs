@@ -107,6 +107,16 @@ public class ButtonManager : MonoBehaviour
             if (collector != null)
             {
                 DecrementActiveButtonCount(collector.Type);
+
+                if (collector is StrikeButtonCollector strikeCollector)
+                {
+                    strikeCollector.OnStrikeCounted -= PlayButtonHitSound;
+                }
+
+                if (collector is WrapButtonCollector wrapCollector && collector.Type == ButtonType.Shield)
+                {
+                    wrapCollector.OnWrapCounted -= OnShieldWrapCounted;
+                }
             }
             else
             {
@@ -117,7 +127,28 @@ public class ButtonManager : MonoBehaviour
         // Destroy the button.
         if (button != null)
         {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayButtonDestroyedSound();
+            }
+
             Destroy(button);
+        }
+    }
+
+    private void PlayButtonHitSound()
+    {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayButtonHitSound();
+        }
+    }
+
+    private void OnShieldWrapCounted(int wrapCount)
+    {
+        if (wrapCount == 1 && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayShieldRemovedSound();
         }
     }
 
@@ -207,6 +238,16 @@ public class ButtonManager : MonoBehaviour
         }
 
         collector.Initialize(needleManager, needleManager != null ? needleManager.GetNeedleTransform() : null);
+
+        if (collector is StrikeButtonCollector strikeCollector)
+        {
+            strikeCollector.OnStrikeCounted += PlayButtonHitSound;
+        }
+
+        if (collector is WrapButtonCollector wrapCollector && collector.Type == ButtonType.Shield)
+        {
+            wrapCollector.OnWrapCounted += OnShieldWrapCounted;
+        }
 
         buttons.Add(newButton, collector);
         activeButtonCountsByType[collector.Type] = GetActiveButtonCountByType(collector.Type) + 1;

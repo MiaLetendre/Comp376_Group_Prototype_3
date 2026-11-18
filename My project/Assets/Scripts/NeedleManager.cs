@@ -162,6 +162,10 @@ public class NeedleManager : MonoBehaviour
         if (needleHealth < previousHealth)
         {
             OnDamageTaken?.Invoke();
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayNailDamagedSound();
+            }
         }
 
         Transform needleTransform = GetNeedleTransform();

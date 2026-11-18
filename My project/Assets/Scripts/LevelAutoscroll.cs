@@ -6,16 +6,16 @@ using System.Collections.Generic;
 public class LevelAutoscroll : MonoBehaviour
 {
     [Header("Scroll")]
-    [SerializeField] float baseScrollSpeed = 1.6f;
+    [SerializeField] float baseScrollSpeed = 1f;
     [SerializeField] float maxScrollSpeed = 6f;
-    [SerializeField] float rampDuration = 250f;
+    [SerializeField] float rampDuration = 400f;
 
     [Header("Spawning")]
     [SerializeField] float spawnAheadDistance = 12f;
     [SerializeField] float despawnBehindDistance = 12f;
     [SerializeField] float minButtonGap = 1.05f;
     [SerializeField] float minWallGap = 1.15f;
-    [SerializeField] int easyActiveButtons = 6;
+    [SerializeField] int easyActiveButtons = 1;
     [SerializeField] int hardActiveButtons = 11;
     [SerializeField] float minLaneWidth = 3.5f;
 
@@ -23,16 +23,16 @@ public class LevelAutoscroll : MonoBehaviour
     private const float LaneNoiseFrequency = 0.05f;
     private const float MinSpeedWobble = 0.85f;
     private const float MaxSpeedWobble = 1.15f;
-    private const float EasyButtonGap = 1.7f;
+    private const float EasyButtonGap = 2.4f;
     private const float HardButtonGap = 1.05f;
     private const float EasyButtonJitter = 1.4f;
     private const float HardButtonJitter = 0.65f;
     private const float EasyPairChance = 0.25f;
     private const float HardPairChance = 0.42f;
-    private const float EasyWallGap = 2.8f;
+    private const float EasyWallGap = 3.8f;
     private const float HardWallGap = 1.35f;
     private const float WallGapJitter = 1.5f;
-    private const float EasyVerticalChance = 0.18f;
+    private const float EasyVerticalChance = 0.08f;
     private const float HardVerticalChance = 0.62f;
     private const float ButtonClearance = 0.6f;
     private const float HorizontalPassGap = 2f;

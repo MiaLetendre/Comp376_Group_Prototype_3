@@ -112,3 +112,4 @@ MonoBehaviour:
   scorePoints: 30
   spawnWeight: 22
   wrapsRequired: 2
+  depletedShieldSprite: {fileID: 8104954996234863586, guid: d05efacef073ee84eae1bcf313914217, type: 3}

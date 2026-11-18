@@ -1,12 +1,16 @@
 using UnityEngine;
+using System;
 
 public class WrapButtonCollector : ButtonCollector
 {
     [Tooltip("The number of wraps required to collect this button.")]
     [SerializeField, Min(1)] int wrapsRequired = 1;
+    [Tooltip("Sprite shown after the shield has absorbed a wrap.")]
+    [SerializeField] private Sprite depletedShieldSprite;
     private int currentWraps;
     private float accumulatedAngle;
     private bool trackingWrap;
+    public event Action<int> OnWrapCounted;
 
     public override bool TryCollect(
         Vector2 previousNeedlePosition,
@@ -41,6 +45,16 @@ public class WrapButtonCollector : ButtonCollector
         }
 
         currentWraps++;
+        if (Type == ButtonType.Shield && currentWraps == 1 && depletedShieldSprite != null)
+        {
+            SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.sprite = depletedShieldSprite;
+            }
+        }
+
+        OnWrapCounted?.Invoke(currentWraps);
         accumulatedAngle -= Mathf.Sign(accumulatedAngle) * 360f;
         return currentWraps >= wrapsRequired;
     }
