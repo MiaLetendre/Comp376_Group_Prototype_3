@@ -5,15 +5,24 @@ public class NeedleManager : MonoBehaviour
 {
     private const int MaxNeedleHealth = 3;
 
-    private NeedleView needleView;
-    private ButtonManager buttonManager;
-    private int needleHealth = MaxNeedleHealth;
-    private Vector2 lastMouseWorldPosition;
+    
+    [Header("Movement")]
+   // [SerializeField] private float baseMovementSpeed = .02f;
+    [SerializeField] private float sensitivity = 1f;
+    private Vector2 virtualNeedlePos;
+
     public int ButtonsCollected => buttonManager != null ? buttonManager.ButtonsCollected : 0;
     public int Score => buttonManager != null ? buttonManager.Score : 0;
     public int ActiveButtonCount => buttonManager != null ? buttonManager.ActiveButtonCount : 0;
     public event System.Action OnDamageTaken;
-    public event System.Action<Vector2> OnDynamiteCaptured // forward the event from the button manager
+
+    private NeedleView needleView;
+    private ButtonManager buttonManager;
+    private int needleHealth = MaxNeedleHealth;
+    private Vector2 lastMouseWorldPosition;
+    private const string SensitivityPrefKey = "MouseSensitivity";
+
+    public event System.Action<Vector2> OnDynamiteCaptured // forward the event from the button manager    
     {
         add
         {
@@ -48,6 +57,11 @@ public class NeedleManager : MonoBehaviour
         {
             buttonManager.Initialize(this);
         }
+        sensitivity = PlayerPrefs.GetFloat(SensitivityPrefKey, 1f);
+        if (needleView != null)
+        {
+            virtualNeedlePos = transform.position;
+        }
     }
 
     private void Start()
@@ -78,12 +92,20 @@ public class NeedleManager : MonoBehaviour
             return;
         }
 
-        // Get the current mouse position in world space
-        Vector3 mouseScreenPosition = Mouse.current.position.ReadValue();
-        Vector2 currentMouseWorldPosition = needleView.GetMouseWorldPosition(mouseScreenPosition);
 
+
+        Vector2 mouseDelta = Mouse.current.delta.ReadValue() * sensitivity ;//* baseMovementSpeed;
+        virtualNeedlePos += mouseDelta;
+
+    
+
+        virtualNeedlePos.x = Mathf.Clamp(virtualNeedlePos.x, 0f, Screen.width);
+        virtualNeedlePos.y = Mathf.Clamp(virtualNeedlePos.y, 0f, Screen.height);
+
+        Vector2 currentMouseWorldPosition = needleView.GetMouseWorldPosition(virtualNeedlePos);
+        
         // Update the needle view
-        needleView.UpdateView(mouseScreenPosition, Time.deltaTime);
+        needleView.UpdateView(virtualNeedlePos, Time.deltaTime);
 
         // Check if the needle's movement crossed the thread and notify the button manager.
         bool threadCrossingStarted = TryFindNeedleThreadCrossing(lastMouseWorldPosition, currentMouseWorldPosition);
@@ -203,5 +225,28 @@ public class NeedleManager : MonoBehaviour
     {
         return needleHealth > 0;
     }
+
+    public void SetSensitivity(float sens)
+    {
+        sensitivity = sens;
+        //sets player preference for sensitivity
+        PlayerPrefs.SetFloat(SensitivityPrefKey, sens); 
+    }
+
+    public float GetSensitivity()
+    {
+        return sensitivity;
+    }
+
+    private void ResetVirtualCursorToCenter()
+    {
+        virtualNeedlePos = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+        if (needleView != null && Camera.main != null)
+        {
+            lastMouseWorldPosition = needleView.GetMouseWorldPosition(virtualNeedlePos);
+        }
+    }
+
+
 
 }

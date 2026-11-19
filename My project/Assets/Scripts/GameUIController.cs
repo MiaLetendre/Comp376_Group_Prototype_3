@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using TMPro;
+using UnityEngine.UI;
 
 [DisallowMultipleComponent]
 public sealed class GameUIController : MonoBehaviour
@@ -17,7 +18,9 @@ public sealed class GameUIController : MonoBehaviour
     [SerializeField] private GameObject howToPlayPage;
     [SerializeField] private TMP_Text deathScoreText;
     [SerializeField] private TMP_Text deathHighScoreText;
-    
+
+    [Header("Sensitivity")]
+    [SerializeField] private Slider sensitivitySlider;
 
     private NeedleManager needleManager;
     private HealthDisplay healthDisplay;
@@ -27,6 +30,7 @@ public sealed class GameUIController : MonoBehaviour
     private Page howToPlayReturn = Page.Playing;
     private bool watchForDeath;
     private bool wasNeedleManagerEnabled;
+    
     private float previousTimeScale = 1f;
 
     private void Awake()
@@ -56,6 +60,13 @@ public sealed class GameUIController : MonoBehaviour
 
         needleManager = FindFirstObjectByType<NeedleManager>();
         threadLine = needleManager != null ? needleManager.GetComponent<LineRenderer>() : null;
+
+        if (sensitivitySlider != null && needleManager != null)
+        {
+            sensitivitySlider.onValueChanged.RemoveListener(OnSensitivityChanged);
+            sensitivitySlider.value = needleManager.GetSensitivity();
+            sensitivitySlider.onValueChanged.AddListener(OnSensitivityChanged);
+        }
 
         SetPage(needleManager != null ? Page.Tutorial : Page.Playing);
     }
@@ -103,8 +114,14 @@ public sealed class GameUIController : MonoBehaviour
             (deathPage != null && deathPage.activeInHierarchy);
 
         Cursor.visible = anyPageActive;
-        if (anyPageActive)
+    
+        if (anyPageActive){
             Cursor.lockState = CursorLockMode.None;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.Confined;
+        }
     }
 
     private void SetPage(Page next)
@@ -272,5 +289,13 @@ public sealed class GameUIController : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
 
         if (page != Page.Playing) UnfreezeGame();
+    }
+
+    private void OnSensitivityChanged(float value)
+    {
+        if (needleManager != null)
+        {
+            needleManager.SetSensitivity(value);
+        }
     }
 }
