@@ -14,13 +14,12 @@ public class ButtonManager : MonoBehaviour
     private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
     private readonly Dictionary<ButtonType, int> activeButtonCountsByType = new Dictionary<ButtonType, int>();
     private NeedleManager needleManager;
+    private CollectionFeedbackEffect collectionFeedbackEffect;
     private int buttonsCollected;
     private int score;
-    private int scoreMultiplier = 1;
 
     public int ButtonsCollected => buttonsCollected;
     public int Score => score;
-    public int ScoreMultiplier => scoreMultiplier;
     public event System.Action<Vector2> DynamiteCaptured;
 
     public void NotifyDynamiteCaptured(Vector2 position)
@@ -28,16 +27,17 @@ public class ButtonManager : MonoBehaviour
         DynamiteCaptured?.Invoke(position);
     }
 
-    public void IncreaseScoreMultiplier()
+    public void AddScorePoints(int points)
     {
-        scoreMultiplier++;
-        Debug.Log($"Score multiplier increased to {scoreMultiplier}.", this);
-    }
+        if (points < 0)
+        {
+            Debug.LogError("Cannot add a negative number of score points.", this);
+            return;
+        }
 
-    public void ApplyScoreMultiplierToTotal()
-    {
-        long multipliedScore = (long)score * scoreMultiplier;
-        score = multipliedScore > int.MaxValue ? int.MaxValue : (int)multipliedScore;
+        // Keep the cumulative score within the int-backed score range.
+        long updatedScore = (long)score + points;
+        score = updatedScore > int.MaxValue ? int.MaxValue : (int)updatedScore;
     }
 
     public int ActiveButtonCount
@@ -59,6 +59,16 @@ public class ButtonManager : MonoBehaviour
         if (buttonParent == null && needleManagerOwner != null)
         {
             buttonParent = needleManagerOwner.transform;
+        }
+
+        // Ensure a CollectionFeedbackEffect exists on the needle manager for button collection feedback
+        if (collectionFeedbackEffect == null && needleManagerOwner != null)
+        {
+            collectionFeedbackEffect = needleManagerOwner.GetComponent<CollectionFeedbackEffect>();
+            if (collectionFeedbackEffect == null)
+            {
+                collectionFeedbackEffect = needleManagerOwner.gameObject.AddComponent<CollectionFeedbackEffect>();
+            }
         }
     }
 
@@ -95,22 +105,51 @@ public class ButtonManager : MonoBehaviour
                 continue;
             }
 
+            // Feedback uses the actual score change, including collector-specific awards.
+            int previousScore = score;
             collector.OnCollected(this);
             bool countsAsCollected = collector.CountsAsCollected;
-
-            RemoveAndDestroyButton(button);
             if (countsAsCollected)
             {
                 OnButtonCollected(collector.ScorePoints);
             }
+
+            ShowCollectionFeedback(collector, Mathf.Max(0, score - previousScore));
+            RemoveAndDestroyButton(button);
             break;
         }
+    }
+
+    // Displays the feeback for the button collection, including any custom message and awarded points.
+    private void ShowCollectionFeedback(ButtonCollector collector, int pointsAwarded)
+    {
+        if (collectionFeedbackEffect == null)
+        {
+            Debug.LogError("CollectionFeedbackEffect is missing from ButtonManager.", this);
+            return;
+        }
+
+        // Feedback is shown at needle tip, or at the button as a fallback
+        Vector3 defaultPosition = needleManager != null ? needleManager.GetNeedleHeadPosition() : collector.transform.position;
+
+        CollectionFeedbackSettings settings = collector.GetComponent<CollectionFeedbackSettings>();
+        if (settings != null)
+        {
+            // Prefab settings choose the message, colors, and whether to anchor at the button.
+            settings.Show(collectionFeedbackEffect, defaultPosition, pointsAwarded);
+            return;
+        }
+
+        // Default feedback shows only the points awarded, with no custom message. 
+        // This is used for gold-button slashes, which have their own prefab settings
+        string text = pointsAwarded > 0 ? "+" + pointsAwarded : "NICE!";
+        collectionFeedbackEffect.Show(defaultPosition, text);
     }
 
     private void OnButtonCollected(int scorePoints)
     {
         buttonsCollected++;
-        score += scorePoints * scoreMultiplier;
+        AddScorePoints(scorePoints);
     }
 
     private void RemoveAndDestroyButton(GameObject button)

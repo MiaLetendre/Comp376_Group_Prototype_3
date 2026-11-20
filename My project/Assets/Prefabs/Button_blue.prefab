@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5549730593512634900}
   - component: {fileID: 4013587824590273654}
   - component: {fileID: 6000000000000000103}
+  - component: {fileID: 7000000000000000002}
   m_Layer: 5
   m_Name: Button_blue
   m_TagString: Untagged
@@ -113,3 +114,19 @@ MonoBehaviour:
   spawnWeight: 22
   wrapsRequired: 2
   depletedShieldSprite: {fileID: 8104954996234863586, guid: d05efacef073ee84eae1bcf313914217, type: 3}
+--- !u!114 &7000000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7479389638260734148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5d7335e6d0641e08fbcbcf4f8791302, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollectionFeedbackSettings
+  message: NICE
+  textColor: {r: 1, g: 1, b: 1, a: 1}
+  burstColor: {r: 1, g: 0.86, b: 0.45, a: 1}
+  showAtButtonPosition: 0
