@@ -11,6 +11,9 @@ public class ButtonManager : MonoBehaviour
     [SerializeField] private List<ButtonCollector> buttonTypes = new List<ButtonCollector>();
     [SerializeField] private float buttonDistanceThreshold = 2f;
 
+    [Header("Effects")]
+    [SerializeField] private SlowMoVignetteEffect slowMoVignetteEffect;
+
     private readonly Dictionary<GameObject, ButtonCollector> buttons = new Dictionary<GameObject, ButtonCollector>();
     private readonly Dictionary<ButtonType, int> activeButtonCountsByType = new Dictionary<ButtonType, int>();
     private NeedleManager needleManager;
@@ -291,6 +294,11 @@ public class ButtonManager : MonoBehaviour
         }
 
         collector.Initialize(needleManager, needleManager != null ? needleManager.GetNeedleTransform() : null);
+
+        if (collector is GoldButtonCollector goldCollector)
+        {
+            goldCollector.SetEffectController(slowMoVignetteEffect);
+        }
 
         if (collector is StrikeButtonCollector strikeCollector)
         {

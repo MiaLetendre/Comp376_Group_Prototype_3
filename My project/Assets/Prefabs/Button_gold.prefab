@@ -113,9 +113,12 @@ MonoBehaviour:
   buttonType: 4
   scorePoints: 0
   spawnWeight: 50
-  strikesRequired: 3
+  strikesRequired: 1
   requiredBodyCoverage: 0.3
   pointsPerSlash: 25
+  slashWindowDuration: 5
+  vignetteFadeInDuration: 0.5
+  vignetteFadeOutDuration: 0.5
 --- !u!114 &6090000000000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0

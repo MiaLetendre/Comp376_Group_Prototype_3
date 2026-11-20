@@ -6414,13 +6414,14 @@ GameObject:
   - component: {fileID: 1552894309}
   - component: {fileID: 1552894308}
   - component: {fileID: 1552894310}
+  - component: {fileID: 1552894311}
   m_Layer: 0
   m_Name: Vignette
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!212 &1552894308
 SpriteRenderer:
   serializedVersion: 2
@@ -6471,7 +6472,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -6489,8 +6490,8 @@ Transform:
   m_GameObject: {fileID: 1552894307}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.01368, y: -0.14782, z: 0}
-  m_LocalScale: {x: 18.134119, y: 10.518726, z: 1}
+  m_LocalPosition: {x: -0.0136, y: -0.0316, z: 0}
+  m_LocalScale: {x: 18.135813, y: 10.2862625, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -6508,6 +6509,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundCameraHeightFollow
   targetCamera: {fileID: 519420031}
+--- !u!114 &1552894311
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1552894307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10624f5944b088f45b51713d7a7ca6cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlowMoVignetteEffect
+  vignetteRenderer: {fileID: 1552894308}
+  slowMoTimeScale: 0.35
 --- !u!1 &1554597757
 GameObject:
   m_ObjectHideFlags: 0
@@ -7432,6 +7447,7 @@ MonoBehaviour:
   - {fileID: 6000000000000000101, guid: 16000000000000000000000000000003, type: 3}
   - {fileID: 2781155204269731310, guid: d4b93daf6f2d7664bacb2d0e6f128f5f, type: 3}
   buttonDistanceThreshold: 4
+  slowMoVignetteEffect: {fileID: 1552894311}
 --- !u!1 &1752232856
 GameObject:
   m_ObjectHideFlags: 0
