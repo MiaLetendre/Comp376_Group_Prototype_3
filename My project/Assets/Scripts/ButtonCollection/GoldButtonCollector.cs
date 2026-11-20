@@ -84,7 +84,7 @@ public class GoldButtonCollector : StrikeButtonCollector
         OnStrikeCounted -= AwardSlashPoints;
         if (effectController != null && slashWindowStarted)
         {
-            effectController.ClearAlpha(this);
+            effectController.Clear();
         }
     }
 
@@ -92,10 +92,10 @@ public class GoldButtonCollector : StrikeButtonCollector
     {
         slashWindowStarted = true;
         slashWindowStartTime = Time.unscaledTime;
-        hasVignetteRenderer = effectController != null && effectController.TrySetAlpha(this, 0f);
+        hasVignetteRenderer = effectController != null && effectController.TrySetAlpha(0f);
         if (!hasVignetteRenderer)
         {
-            Debug.LogError("Assign a SlowMoVignetteController with a vignette SpriteRenderer to enable the gold-button effect.", this);
+            Debug.LogError("Assign a SlowMoVignetteEffect with a vignette SpriteRenderer to enable the gold-button effect.", this);
         }
     }
 
@@ -110,7 +110,7 @@ public class GoldButtonCollector : StrikeButtonCollector
     {
         if (hasVignetteRenderer && effectController != null)
         {
-            effectController.TrySetAlpha(this, alpha);
+            effectController.TrySetAlpha(alpha);
         }
     }
 

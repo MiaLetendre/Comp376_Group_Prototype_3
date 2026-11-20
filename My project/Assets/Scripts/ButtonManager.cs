@@ -258,6 +258,12 @@ public class ButtonManager : MonoBehaviour
                 continue;
             }
 
+            // Allow only one gold button to exist in the scene at a time.
+            if (buttonType is GoldButtonCollector && GetActiveButtonCountByType(buttonType.Type) > 0)
+            {
+                continue;
+            }
+
             // Calculate this type's share of the currently active buttons.
             float share = GetActiveButtonCountByType(buttonType.Type) / (float)activeCount;
             float weight = buttonType.SpawnWeight / (SpawnBalanceSmoothing + share);

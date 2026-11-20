@@ -1,58 +1,51 @@
-using System.Collections.Generic;
 using UnityEngine;
 
+// Controls the screen vignette opacity and synchronizes slow-motion time scaling.
 [DisallowMultipleComponent]
 public class SlowMoVignetteEffect : MonoBehaviour
 {
-    [SerializeField] private SpriteRenderer vignetteRenderer;
-    [SerializeField, Range(0.05f, 1f), Tooltip("How slow the time scale is when the vignette is at full alpha.")]
-    private float slowMoTimeScale = 0.35f;
+    [SerializeField, Tooltip("The SpriteRenderer used to display the screen vignette.")]
+    private SpriteRenderer vignetteRenderer;
 
-    private readonly Dictionary<object, float> alphaBySource = new Dictionary<object, float>();
+    [SerializeField, Range(0.05f, 1f), Tooltip("Target Time.timeScale when the vignette is at full alpha.")]
+    private float slowMoTimeScale = 0.35f;
     private float defaultFixedDeltaTime;
 
     private void Awake()
     {
         defaultFixedDeltaTime = Time.fixedDeltaTime;
-        UpdateEffect();
+        Clear();
     }
 
-    public bool TrySetAlpha(object source, float alpha)
+    // Sets the vignette alpha and scales game time to match.
+    public bool TrySetAlpha(float alpha)
     {
-        if (source == null || vignetteRenderer == null)
+        if (vignetteRenderer == null)
         {
             return false;
         }
 
-        alphaBySource[source] = Mathf.Clamp01(alpha);
-        UpdateEffect();
+        float clampedAlpha = Mathf.Clamp01(alpha);
+
+        Color color = vignetteRenderer.color;
+        color.a = clampedAlpha;
+        vignetteRenderer.color = color;
+
+        ApplyTimeScale(Mathf.Lerp(1f, slowMoTimeScale, clampedAlpha));
         return true;
     }
 
-    public void ClearAlpha(object source)
+    // Resets the vignette to transparent and restores normal game speed.
+    public void Clear()
     {
-        if (source != null && alphaBySource.Remove(source))
-        {
-            UpdateEffect();
-        }
-    }
-
-    private void UpdateEffect()
-    {
-        float alpha = 0f;
-        foreach (float requestedAlpha in alphaBySource.Values)
-        {
-            alpha = Mathf.Max(alpha, requestedAlpha);
-        }
-
         if (vignetteRenderer != null)
         {
             Color color = vignetteRenderer.color;
-            color.a = alpha;
+            color.a = 0f;
             vignetteRenderer.color = color;
         }
 
-        ApplyTimeScale(Mathf.Lerp(1f, slowMoTimeScale, alpha));
+        ApplyTimeScale(1f);
     }
 
     private void ApplyTimeScale(float scale)
@@ -63,6 +56,7 @@ public class SlowMoVignetteEffect : MonoBehaviour
 
     private void OnDestroy()
     {
+        // Always restore normal time scale when this object is destroyed or the scene reloads.
         ApplyTimeScale(1f);
     }
 }
