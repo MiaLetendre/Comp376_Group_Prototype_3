@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -5,9 +6,9 @@ public class NeedleManager : MonoBehaviour
 {
     private const int MaxNeedleHealth = 3;
 
-    
+
     [Header("Movement")]
-   // [SerializeField] private float baseMovementSpeed = .02f;
+    // [SerializeField] private float baseMovementSpeed = .02f;
     [SerializeField] private float sensitivity = 1f;
     private Vector2 virtualNeedlePos;
 
@@ -94,16 +95,16 @@ public class NeedleManager : MonoBehaviour
 
 
 
-        Vector2 mouseDelta = Mouse.current.delta.ReadValue() * sensitivity ;//* baseMovementSpeed;
+        Vector2 mouseDelta = Mouse.current.delta.ReadValue() * sensitivity;//* baseMovementSpeed;
         virtualNeedlePos += mouseDelta;
 
-    
+
 
         virtualNeedlePos.x = Mathf.Clamp(virtualNeedlePos.x, 0f, Screen.width);
         virtualNeedlePos.y = Mathf.Clamp(virtualNeedlePos.y, 0f, Screen.height);
 
         Vector2 currentMouseWorldPosition = needleView.GetMouseWorldPosition(virtualNeedlePos);
-        
+
         // Update the needle view
         needleView.UpdateView(virtualNeedlePos, Time.deltaTime);
 
@@ -221,6 +222,46 @@ public class NeedleManager : MonoBehaviour
         return needleHealth;
     }
 
+    public void AddScorePoints(int points)
+    {
+        if (buttonManager == null)
+        {
+            Debug.LogError("Cannot add score points because ButtonManager is missing.", this);
+            return;
+        }
+
+        // ButtonManager owns the score, so all awards pass through it.
+        buttonManager.AddScorePoints(points);
+    }
+
+    // Show the collection feedback effect for a button collector, using its custom settings if available.
+    public void ShowScoreFeedback(ButtonCollector collector, int pointsAwarded)
+    {
+        if (collector == null)
+        {
+            Debug.LogError("Cannot show button feedback because its collector is missing.", this);
+            return;
+        }
+
+        CollectionFeedbackEffect feedbackEffect = GetComponent<CollectionFeedbackEffect>();
+        if (feedbackEffect == null)
+        {
+            Debug.LogError("CollectionFeedbackEffect is missing from NeedleManager.", this);
+            return;
+        }
+
+        CollectionFeedbackSettings settings = collector.GetComponent<CollectionFeedbackSettings>();
+        Vector3 defaultPosition = GetNeedleHeadPosition();
+        if (settings != null)
+        {
+            // Keep the prefab's visual settings but omit its collection message during slashes.
+            settings.ShowScoreOnly(feedbackEffect, defaultPosition, pointsAwarded);
+            return;
+        }
+
+        feedbackEffect.Show(defaultPosition, "+" + pointsAwarded);
+    }
+
     public bool IsNeedleAlive()
     {
         return needleHealth > 0;
@@ -230,7 +271,7 @@ public class NeedleManager : MonoBehaviour
     {
         sensitivity = sens;
         //sets player preference for sensitivity
-        PlayerPrefs.SetFloat(SensitivityPrefKey, sens); 
+        PlayerPrefs.SetFloat(SensitivityPrefKey, sens);
     }
 
     public float GetSensitivity()

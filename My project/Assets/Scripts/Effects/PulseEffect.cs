@@ -6,17 +6,20 @@ public class PulseEffect : MonoBehaviour
 {
     [Tooltip("How much the object scales up during the pulse.")]
     [SerializeField, Min(1f)] private float scaleMultiplier = 1.12f;
-    [Tooltip("How long the pulse takes to grow and return to normal.")]
+    [Tooltip("How long the pulse takes to grow and return to normal, in unscaled seconds.")]
     [SerializeField, Min(0.01f)] private float duration = 0.18f;
+    [Tooltip("Animation speed multiplier while the gold button slash window is active.")]
+    [SerializeField, Min(1f)] private float goldActiveSpeedMultiplier = 3f;
 
     private StrikeButtonCollector strikeButtonCollector;
+    private GoldButtonCollector goldButtonCollector;
     private Vector3 originalScale;
-    private Vector3 pulseStartScale;
     private float elapsed = -1f;
 
     private void Awake()
     {
         strikeButtonCollector = GetComponent<StrikeButtonCollector>();
+        goldButtonCollector = strikeButtonCollector as GoldButtonCollector;
         originalScale = transform.localScale;
     }
 
@@ -25,6 +28,7 @@ public class PulseEffect : MonoBehaviour
         if (strikeButtonCollector == null)
         {
             strikeButtonCollector = GetComponent<StrikeButtonCollector>();
+            goldButtonCollector = strikeButtonCollector as GoldButtonCollector;
         }
 
         strikeButtonCollector.OnStrikeCounted += Play;
@@ -42,24 +46,28 @@ public class PulseEffect : MonoBehaviour
     {
         if (elapsed < 0f) return;
 
-        // Update the pulse effect over time
-        elapsed += Time.deltaTime;
+        float speedMultiplier = goldButtonCollector != null && goldButtonCollector.IsSlashWindowActive
+            ? goldActiveSpeedMultiplier
+            : 1f;
+
+        // Done let pulse be affected by tme scale
+        elapsed += Time.unscaledDeltaTime * speedMultiplier;
         float progress = Mathf.Clamp01(elapsed / duration);
         Vector3 peakScale = originalScale * scaleMultiplier;
 
-        // If the pulse is in the first half of its duration, scale up
+        // Scale up 
         if (progress < 0.5f)
         {
             float growProgress = Mathf.SmoothStep(0f, 1f, progress * 2f);
-            transform.localScale = Vector3.Lerp(pulseStartScale, peakScale, growProgress);
+            transform.localScale = Vector3.Lerp(originalScale, peakScale, growProgress);
             return;
         }
 
-        // If the pulse is in the second half of its duration, scale back down 
+        // Scale down 
         float shrinkProgress = Mathf.SmoothStep(0f, 1f, (progress - 0.5f) * 2f);
         transform.localScale = Vector3.Lerp(peakScale, originalScale, shrinkProgress);
 
-        // Reset the pulse effect when complete
+        // Reset when complete so the next slash can trigger a new pulse.
         if (progress >= 1f)
         {
             transform.localScale = originalScale;
@@ -69,7 +77,9 @@ public class PulseEffect : MonoBehaviour
 
     private void Play()
     {
-        pulseStartScale = transform.localScale;
+        // Let the current pulse finish before starting a new one.
+        if (elapsed >= 0f) return;
+
         elapsed = 0f;
     }
 }

@@ -14,6 +14,8 @@ public class StrikeButtonCollector : ButtonCollector
     private bool strikeCountedThisPass;
     public event Action OnStrikeCounted;
 
+    protected virtual bool IsCollectionReady => currentStrikes >= strikesRequired;
+
     protected virtual void Awake()
     {
         buttonCollider = GetComponent<CircleCollider2D>();
@@ -35,6 +37,11 @@ public class StrikeButtonCollector : ButtonCollector
 
     public override bool TryCollect(Vector2 previousNeedlePosition, Vector2 currentNeedlePosition, bool threadCrossingStarted, float buttonDistanceThreshold)
     {
+        if (IsCollectionReady)
+        {
+            return true;
+        }
+
         Vector2 movement = currentNeedlePosition - previousNeedlePosition;
         float distance = movement.magnitude;
         if (buttonCollider == null || distance <= Mathf.Epsilon)
@@ -72,7 +79,7 @@ public class StrikeButtonCollector : ButtonCollector
                 currentStrikes++;
                 strikeCountedThisPass = true;
                 OnStrikeCounted?.Invoke();
-                if (currentStrikes >= strikesRequired)
+                if (IsCollectionReady)
                 {
                     return true;
                 }
