@@ -13,6 +13,7 @@ public class NeedleManager : MonoBehaviour
 
     public int ButtonsCollected => buttonManager != null ? buttonManager.ButtonsCollected : 0;
     public int Score => buttonManager != null ? buttonManager.Score : 0;
+    public int ScoreMultiplier => buttonManager != null ? buttonManager.ScoreMultiplier : 1;
     public int ActiveButtonCount => buttonManager != null ? buttonManager.ActiveButtonCount : 0;
     public event System.Action OnDamageTaken;
 
@@ -219,6 +220,14 @@ public class NeedleManager : MonoBehaviour
     public int GetNeedleHealth()
     {
         return needleHealth;
+    }
+
+    public void IncreaseScoreMultiplier()
+    {
+        if (buttonManager != null)
+        {
+            buttonManager.IncreaseScoreMultiplier();
+        }
     }
 
     public bool IsNeedleAlive()

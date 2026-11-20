@@ -16,14 +16,28 @@ public class ButtonManager : MonoBehaviour
     private NeedleManager needleManager;
     private int buttonsCollected;
     private int score;
+    private int scoreMultiplier = 1;
 
     public int ButtonsCollected => buttonsCollected;
     public int Score => score;
+    public int ScoreMultiplier => scoreMultiplier;
     public event System.Action<Vector2> DynamiteCaptured;
 
     public void NotifyDynamiteCaptured(Vector2 position)
     {
         DynamiteCaptured?.Invoke(position);
+    }
+
+    public void IncreaseScoreMultiplier()
+    {
+        scoreMultiplier++;
+        Debug.Log($"Score multiplier increased to {scoreMultiplier}.", this);
+    }
+
+    public void ApplyScoreMultiplierToTotal()
+    {
+        long multipliedScore = (long)score * scoreMultiplier;
+        score = multipliedScore > int.MaxValue ? int.MaxValue : (int)multipliedScore;
     }
 
     public int ActiveButtonCount
@@ -96,7 +110,7 @@ public class ButtonManager : MonoBehaviour
     private void OnButtonCollected(int scorePoints)
     {
         buttonsCollected++;
-        score += scorePoints;
+        score += scorePoints * scoreMultiplier;
     }
 
     private void RemoveAndDestroyButton(GameObject button)

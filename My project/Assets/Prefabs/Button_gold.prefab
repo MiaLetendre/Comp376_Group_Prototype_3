@@ -106,11 +106,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 7479389638260734148}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ca3a268aeb14847a0a0000000000003, type: 3}
-  m_EditorClassIdentifier: Assembly-CSharp::StrikeButtonCollector
+  m_Script: {fileID: 11500000, guid: d4a7b0ef2c5948db9af8603a4b7e11c2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GoldButtonCollector
   buttonType: 4
   scorePoints: 0
-  spawnWeight: 5
+  spawnWeight: 50
   strikesRequired: 3
   requiredBodyCoverage: 0.3
 --- !u!114 &6090000000000000001
@@ -123,6 +124,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 776d2f3c9b1740a9a73e72d0e0901001, type: 3}
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PulseEffect
   scaleMultiplier: 1.12
   duration: 0.18
