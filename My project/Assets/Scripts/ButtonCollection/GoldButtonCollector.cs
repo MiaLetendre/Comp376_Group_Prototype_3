@@ -11,6 +11,7 @@ public class GoldButtonCollector : StrikeButtonCollector
     private float vignetteFadeInDuration = 0.5f;
     [SerializeField, Min(0f), Tooltip("How long the vignette takes to fade out before collection.")]
     private float vignetteFadeOutDuration = 0.5f;
+    public bool IsSlashWindowActive => slashWindowStarted && !collectionReady;
 
     private SlowMoVignetteEffect effectController;
     private bool slashWindowStarted;

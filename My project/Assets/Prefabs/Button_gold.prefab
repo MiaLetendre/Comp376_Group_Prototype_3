@@ -133,9 +133,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PulseEffect
   scaleMultiplier: 1.12
   duration: 0.18
-  popRatio: 0.5
-  retriggerSquash: 0.95
-  tiltAngle: 5
+  goldActiveSpeedMultiplier: 1.5
 --- !u!114 &7000000000000000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
