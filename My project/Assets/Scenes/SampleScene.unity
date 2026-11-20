@@ -6116,7 +6116,7 @@ MonoBehaviour:
   dynamiteExplodeSoundVolume: 0.25
   uiButtonSound: {fileID: 8300000, guid: a0d1aa0f5429ba743812f7514847bb0b, type: 3}
   uiButtonSoundVolume: 0.9
-  soundtrack: {fileID: 8300000, guid: ef602b2b9dfb51e448dfcc77f852528e, type: 3}
+  soundtrack: {fileID: 8300000, guid: 2e3b9d0a7f123374a9f68d2b3270dd35, type: 3}
   soundtrackVolume: 0.1
 --- !u!82 &1482517451
 AudioSource:

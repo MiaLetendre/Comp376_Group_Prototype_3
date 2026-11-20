@@ -25,6 +25,7 @@ public class LevelAutoscroll : MonoBehaviour
     private const float MaxSpeedWobble = 1.15f;
     private const float EasyButtonGap = 2.4f;
     private const float HardButtonGap = 1.05f;
+    private const float ButtonSpawnLead = 1.5f;
     private const float EasyButtonJitter = 1.4f;
     private const float HardButtonJitter = 0.65f;
     private const float EasyPairChance = 0.25f;
@@ -83,7 +84,7 @@ public class LevelAutoscroll : MonoBehaviour
 
         float startY = cam != null ? cam.transform.position.y : 0f;
         float viewTop = startY + (cam != null ? cam.orthographicSize : 5f);
-        nextButtonSpawnY = viewTop + 1.5f;
+        nextButtonSpawnY = viewTop + ButtonSpawnLead;
         nextWallBottomY = viewTop + 3.5f;
     }
 
@@ -146,10 +147,10 @@ public class LevelAutoscroll : MonoBehaviour
 
         float difficulty = Difficulty();
         int target = TargetActiveButtons(difficulty);
-        float lowestUseful = cam.transform.position.y - cam.orthographicSize + 1f;
-        if (nextButtonSpawnY < lowestUseful)
+        float spawnThreshold = ViewTop() + ButtonSpawnLead;
+        if (nextButtonSpawnY < spawnThreshold)
         {
-            nextButtonSpawnY = ViewTop() + 0.5f;
+            nextButtonSpawnY = spawnThreshold;
         }
 
         int spawnedThisFrame = 0;
